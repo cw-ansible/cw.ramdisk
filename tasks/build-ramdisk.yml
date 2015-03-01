@@ -1,0 +1,45 @@
+---
+
+- name: check chroot
+  command:
+    ischroot
+  failed_when: false
+  changed_when: "ischroot.rc != 2"
+  register: ischroot
+
+- name: mount pseudo file systems
+  shell:
+    mount -o bind '{{ item }}' '{{ inventory_hostname }}/{{ item }}'
+  connection: local
+  when:
+    ischroot.rc == 2
+  with_items:
+    - /proc
+    - /dev
+    - /dev/pts
+
+- name: Ask for ramdisk passphrase
+  debug:
+    msg: |-
+      You will need to enter a passphrase for your ramdisk. Next task is in
+      hold until you enterred the passphrase.
+      Please connect to {{ inventory_hostname }} (you might need to chroot
+      from current host) and type following command
+      echo 'Secr3tP@ass' > {{ ramdisk_target }}/pass
+  when:
+    ramdisk_tar_ext.endswith('.gpg')
+    
+- name: Update ramdisk image
+  command:
+    update-ramdisk
+
+- name: umount pseudo file systems
+  shell:
+    umount -l '{{ inventory_hostname }}/{{ item }}'
+  connection: local
+  when:
+    ischroot.rc == 2
+  with_items:
+    - /dev/pts
+    - /dev
+    - /proc

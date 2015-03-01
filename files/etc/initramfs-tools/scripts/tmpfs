@@ -1,0 +1,375 @@
+# -*- sh -*-
+# set -x
+
+retry_nr=0
+
+# This is where /boot is mounted
+local_mount=/local
+
+# Path to unlock fifo
+pass_fifo="/unlock"
+
+gpg=/bin/gpg
+gpg_opts="--decrypt --quiet --no-tty --passphrase-file $pass_fifo --passphrase-fd 3"
+gpg_filter=
+
+
+# check for tar xattrs support
+tar_opts=
+tar --help | grep -q -F -- '--xattr'
+if test $? -eq 0; then
+    tar_opts="--xattrs --xattrs-include '*' --selinux --acls"
+fi
+
+
+# Wee need to unset the ROOT variable since /init call 'parse_numeric' which
+# computes a root block device based upon:
+#  - MAJOR:MINOR
+#  - MAJORMINOR (hex encoded)
+#
+# thus if the ROOT ramdisk image starts with [0-9A-Fa-f] /init fails with an
+# arithmetic error
+ramdisk_root="${ROOT}"
+ROOT=
+export ROOT
+
+# How many tries before giving up on network interface
+DEVICE_MAX_TRIES=10
+
+
+# How many tries before giving up mounting local disk
+LOCAL_DRIVE_MAX_TRIES=30
+
+
+_set_network() {
+    # give a chance for tg3 links to come up.
+    for DEVICE in $(ifconfig -a | awk '{if($2=="Link"&&$3=="encap:Ethernet"){print $1}}'); do
+	# if /run/net-${DEVICE}.conf exists there is a slight chance the
+	# network interface has ben set up
+	if test -e /run/net-${DEVICE}.conf; then
+	    return
+	fi
+	log_begin_msg "Bringing $DEVICE up"
+	ifconfig $DEVICE up
+	
+	# on some device we have to wait until they become ready.
+	i=0
+	while test $i -lt $DEVICE_MAX_TRIES; do
+	    grep -qF up /sys/class/net/$DEVICE/operstate 
+	    if test $? -eq 0; then
+		break
+	    fi
+	    sleep 1
+	    i=$(( $i + 1 ))
+	    log_begin_msg "."
+	done
+
+	# if interface is still not there give up.
+	if test $? -ge $DEVICE_MAX_TRIES; then
+	    log_failure_msg "is $DEVICE connected?"
+	    continue
+	fi
+
+	# configure network only if interface is UP
+	grep -qF up /sys/class/net/$DEVICE/operstate
+	if test $? -eq 0; then
+	    configure_networking
+	fi
+	
+	#ipconfig -t 5 $DEVICE
+	if test -e /run/net-$DEVICE.conf;  then
+            break
+	fi
+    done
+}
+
+
+# Kernel boot parameter:
+# https://www.kernel.org/doc/Documentation/kernel-parameters.txt
+
+# Create a tmpfs into $rootmnt
+# The tmpfs size is given by tmpfs_size or 50% of available memory.
+#
+# See mount(8)
+_create_tmpfs() {
+    df -P | grep -q ${rootmnt}
+    if test $? -ne 0; then
+
+	tmpfs_size=${tmpfs_size:-50%}
+	
+	log_begin_msg "Creating tmpfs root into ${rootmnt} of $(echo ${tmpfs_size} | sed 's/%/%%/g')'."
+	mount -o size=${tmpfs_size} -t tmpfs none ${rootmnt}
+	log_end_msg
+    fi
+}
+
+
+# Get tar compression option regarding file basename extension.
+_get_tar_compression() {
+    local file=$(basename $1 .gpg)
+    case ${file} in
+	*.tar.gz|*.tgz) echo '--gzip' ;;
+        *.tar.bz2|*.tbz2) echo '--bzip2' ;;
+	*.tar.Z|*.taz) echo '--compress' ;;
+        *.tar.xz) echo '--xz' ;;
+	*.tar.lz|*.tlz) echo '--lzip' ;;
+	*.tar.lzo|*.tzo) echo '--lzop' ;;
+	*.tar.lzma) echo '--lzma' ;;
+    esac
+}
+
+# check is file is a gpg encrypted on
+_get_gpg_filer() {
+    local file=$(basename $1)
+    gpg_filter=
+    case ${file} in
+	*.gpg)
+	    if ! test -e ${pass_fifo}; then
+		mkfifo ${pass_fifo}
+	    fi
+
+	    #/lib/cryptsetup/askpass "Password for ${file}: " > ${pass_fifo} &
+	    gpg_filter="${gpg} ${gpg_opts}"
+	    if test -n "${tmpfs_password}"; then
+		cat <<EOF
+*** DANGER: SECURITY FLAW ***
+
+Providing a 'tmpfs_password' in grub is a REALLY BAD IDEA. This should be
+done for rescue or debugging purposes only.
+
+Please consider using SSH to unlock your ramdisk image.
+
+*** DANGER ***
+
+EOF
+		sleep 3
+		log_begin_msg "Using grub provided password for ${file}"
+		echo ${tmpfs_password} > ${pass_fifo} &
+		log_end_msg
+	    else
+		cat <<EOF
+
+File ${file} is passphrase protected.
+
+You can either enter the passphrase on via SSH:
+
+  ssh root@$(ifconfig | sed -n 's/.*inet addr:\([^ ]\+\).*/\1/p' | tail -n 1)
+  echo PASSPHRASE > /lib/cryptsetup/passfifo
+
+Or add a 'tmpfs_password' variable in grub interface:
+ - Hit 'e' on the grub boot entry
+ - Search for 'linux' option
+ - Add 'tmpfs_password="Secret"'
+ - Hit 'Ctrl-x'
+
+Or enter password in the console.
+
+Please note that if plymouth is installed the console passphrase entry may
+be broken. To remove plymouth on Debian/Ubuntu, you can use 'no-plymouth'
+https://github.com/renard/no-plymouth
+
+EOF
+		# This does not work
+		# /lib/cryptsetup/askpass "Password for ${file}: " > ${pass_fifo}
+		# echo >> ${pass_fifo}
+		_pass=$(/lib/cryptsetup/askpass "Password for ${file}: ")
+		if test -n "${_pass}"; then
+		    echo ${_pass} > ${pass_fifo} &
+		fi
+	    fi
+	    ;;
+	*)
+	    gpg_filter="cat"
+	    ;;
+    esac
+}
+
+
+
+_check_local_device() {
+    # When booting some USB device we have to wait until they become ready.
+    local device=$1
+    local i=0
+    while test $i -lt $LOCAL_DRIVE_MAX_TRIES; do
+	if test -e $device; then
+	    break
+	fi
+	sleep 1
+	i=$(( $i + 1 ))
+	log_begin_msg "."
+    done
+}
+
+# mount local
+##
+##  /dev/vda1:file
+_mount_local() {
+    mkdir -p ${local_mount}
+    
+    local _dev=
+    local _method=
+    if test -n "${tmpfs_boot_uuid}"; then
+	log_begin_msg "Mounting UUID ${tmpfs_boot_uuid} to ${local_mount}."
+	_check_local_device "/dev/disk/by-uuid/${tmpfs_boot_uuid}"
+	mount /dev/disk/by-uuid/${tmpfs_boot_uuid} ${local_mount}
+	log_end_msg
+    elif test -n "${tmpfs_boot}"; then
+	log_begin_msg "Mounting device ${tmpfs_boot} to ${local_mount}."
+	_check_local_device "${tmpfs_boot}"
+	mount ${tmpfs_boot} ${local_mount}
+	log_end_msg
+    else
+	panic <<EOF
+
+Cannot find /boot device partition.
+Please provide one of following boot parameter:
+  - 'tmpfs_boot' a block device such as /dev/sda1
+  - 'tmpfs_boot_uuid' a UUID such as 3884165d-9bd5-4af3-880e-cdc8e7b371af
+
+EOF
+    fi
+
+    cd ${rootmnt}
+    _get_gpg_filer ${local_mount}/${ramdisk_root}
+    
+    ${gpg_filter} ${local_mount}/${ramdisk_root} \
+	| tar --extract $(_get_tar_compression ${local_mount}/${ramdisk_root}) \
+	      $tar_opts --file -
+    umount ${local_mount}
+}
+
+
+
+_mount_remote() {
+    _tmpfs_proto=$(echo ${ramdisk_root} | sed -n 's,\(.\+\)://\([^/]\+\)/\(.\+\),\1,p')
+    _tmpfs_host=$(echo ${ramdisk_root} | sed -n 's,\(.\+\)://\([^/]\+\)/\(.\+\),\2,p')
+    _tmpfs_file=$(echo ${ramdisk_root} | sed -n 's,\(.\+\)://\([^/]\+\)/\(.\+\),\3,p')
+
+    if test -z ${_tmpfs_host}; then
+	panic "Could not find a remote host in ${ramdisk_root}."
+    fi
+
+
+    # Make sure network is up and working
+    log_begin_msg "Try to reach ${_tmpfs_host}"
+    ping -c2 ${_tmpfs_host} >/dev/null
+    log_end_msg
+
+    cd ${rootmnt}
+
+    for url in ${ramdisk_root} $(echo ${overlays} | tr ';' ' '); do
+        log_begin_msg "Retriving $url"
+        log_end_msg
+
+        case ${url} in
+            *://*) ;;
+	    # If url is not fully defined assume url is a local file in
+	    # $rootmnt. This is mainly used to $overlays.
+            *) url="file://${rootmnt}/${url}" ;;
+        esac
+	_get_gpg_filer ${url}
+
+	curl -o - --no-buffer ${url} \
+	    | ${gpg_filter} \
+	    | tar --extract $(_get_tar_compression ${url}) \
+		  $tar_opts --file -
+	
+	if test $? -ne 0; then
+	    is_full=$(df -P | awk "{if(\$NF==\"$rootmnt\"){print \$2==\$3}}")
+	    if test $is_full -eq 1; then
+		panic <<EOF
+
+Couldn't download image $url.
+
+No space left on device
+
+Try to increase RAM or diet your image or add 'tmpfs_size' variable on grub
+parameter.
+
+
+EOF
+
+	    fi
+	fi
+    done
+}
+
+
+do_tmpfsmount()
+{
+    _create_tmpfs
+    
+    case ${ramdisk_root} in
+	*://*/*)
+	    _mount_remote
+	    ;;
+        *)
+	    _mount_local
+	    ;;
+    esac
+    
+    # /bin/sleep 20
+}
+
+# TMPFS root mounting
+mountroot()
+{
+
+    cat<<EOF
+
+Booting from tmpfs ramdisk
+
+© 2014 Sébastien Gross <seb |at| chezwam |dot| org>
+
+
+EOF
+
+    # For DHCP
+    modprobe af_packet
+
+    log_begin_msg "Waiting for udev"
+    wait_for_udev 10
+    log_end_msg
+
+    if test "$drop_to_initrd" = "yes"; then
+	panic <<EOF
+Dropped to initrd
+EOF
+    fi
+    
+    #configure_networking
+    _set_network
+    
+    # Default delay is around 180s
+    delay=${ROOTDELAY:-3}
+
+    # We don't really need plymouth here since its use compromise the
+    # crypsetup root filesystem unlocking.
+    #
+    # See: https://bugs.launchpad.net/ubuntu/+source/cryptsetup/+bug/595648
+    plymouth=$(pidof plymouthd)
+    if test -n "$plymouth"; then
+	plymouth --quit
+    fi
+    
+    # loop until tmpfs succeeds
+    do_tmpfsmount
+    while [ ${retry_nr} -lt ${delay} ] && [ ! -e ${rootmnt}${init} ]; do
+        log_begin_msg "Retrying tmpfs mount"
+        /bin/sleep 1
+        do_tmpfsmount
+        retry_nr=$(( ${retry_nr} + 1 ))
+        log_end_msg
+    done
+
+    if [ ! -e ${rootmnt}${init} ]; then
+	panic <<EOF
+
+*** ERROR ***
+
+Could not find a boot device.
+
+EOF
+    fi
+    
+}

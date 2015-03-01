@@ -1,0 +1,55 @@
+#!/bin/sh
+
+## Bring wireless interface up at boot time.
+#
+# A wireless inteface is defined in 'wlan' variable as given as an initrd
+# paramerter such as:
+#      wlan=wlan0
+#
+# If no 'wlan' variable is denfined, try all 'wlan*' interface found on the
+# system.
+#
+# If wlan is 'none' or 'off', or 'false', do not use wlan at boot time.
+#
+
+
+PREREQ="udev"
+
+prereqs() {
+    echo "$PREREQ"
+}
+
+case "$1" in
+    prereqs)
+        prereqs
+        exit 0
+        ;;
+esac
+
+. /scripts/functions
+
+
+
+if test -n "$wlan"; then
+
+    case $wlan in
+	none|off|false) exit 0;;
+    esac
+    
+    DEVICE=$wlan
+else
+    
+    for iface in $(ifconfig -a | awk '{if($1~/^wlan/&&$2=="Link"&&$3=="encap:Ethernet"){print $1}}'); do
+	DEVICE=$iface
+	break
+    done
+fi
+
+if test -n "$DEVICE"; then
+    if test -d /sys/class/net/$DEVICE; then
+	wpa_supplicant -B -i$DEVICE \
+		       -c /etc/wpa_supplicant.conf \
+		       -P /var/run/wpa_supplicant.pid
+	configure_networking
+    fi
+fi

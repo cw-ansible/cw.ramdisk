@@ -1,0 +1,84 @@
+---
+
+# A prefix for all location can be specified if you need to copy files in an
+# unusual path (when you are installing a system using a chroot for example).
+#
+#ramdisk_prefix: /srv/target
+
+# Where should be located the generated ramdisk.
+#
+# In this location you would find a full set of files suitable for a PXE
+# boot.
+#
+ramdisk_target: '/tmp/tftpboot/'
+
+# If defined, the ramdisk image will be copied to /boot. Use this option if
+# you don't use a PXE to boot your server.
+#
+#ramdisk_copy_to_boot: yes
+
+# A whitespace separeted list of users that allowed to connect to the
+# dropbear ssh environment during preboot. If not defined, only root ssh
+# keys will be copied.
+#
+# update-initramfs will look for these users' ssh keys and deploy them to
+# the dropbear's root account.
+#
+# This is useful for debug purposes and mainly to unlock an encrypted
+# ramdisk image.
+#
+#ramdisk_dropbear_users: 'john jane'
+
+
+# ramdisk image extension.
+#
+# extesion will determine which type of compression to use:
+#  - .tar.gz|.tgz: gzip
+#  - .tar.bz2|.tbz2: bzip2
+#  - .tar.Z|.taz: compress
+#  - .tar.xz: xz
+#  - .tar.lz|.tlz: lzip
+#  - .tar.lzo|.tzo: lzop
+#  - .tar.lzma: lzma
+#
+# Make sure you have the appropriate tools installed. gzip is recommended
+# for performances.
+#
+# If the extension is suffixed by ".gpg" the ramdisk image will be encrypted
+# using a GPG passphrase which can be provided either by the use of
+# ramdisk_gpg_passphrase (not recommended since it would be stored on an
+# unprotected location) or through a FIFO.
+#
+ramdisk_tar_ext: '.tar.gz'
+
+# A GPG passphrase used to encrypt the ramdisk image.
+#
+# THIS IS NOT A RECOMMENDED OPTION.
+#
+# If your ramdisk image is meant to be encrypted you need to provide a
+# passphrase. Using this option allows you to defined it. As the passphrase
+# is stored in the /boot/ramdisk/ramdisk.conf file by default it is
+# recommended to not use this option.
+#
+# If you want an encrypted ramdisk an not store the passphrase you must live
+# this option empty. You will be asked to for the passphrase during the
+# ramdisk image generation through a fifo:
+#
+#  echo   "Sec3ret-passph@se" > /tmp/tftpboot/pass
+#
+#ramdisk_gpg_passphrase:
+
+# GPG cipher to use when encrypting the ramdisk image. ASE256 is the current
+# recommended. TWOFISH is also a good alternative.
+#
+# See:
+# - http://en.wikipedia.org/wiki/Advanced_Encryption_Standard
+# - http://en.wikipedia.org/wiki/Twofish
+#
+ramdisk_gpg_cipher: AES256
+
+# A list of extra files to exclude from the ramdisk image. The patterns are
+# the ones used by the tar command (see tar manpage for details). You should
+# not provide the leading slash.
+#
+#ramdisk_tar_exclude_extra:

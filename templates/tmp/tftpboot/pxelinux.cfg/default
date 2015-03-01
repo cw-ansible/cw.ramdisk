@@ -1,0 +1,9 @@
+# {{ ansible_managed }}
+
+default netboot
+
+label netboot
+    kernel vmlinuz
+    append initrd=initrd.img boot=tmpfs root=http://172.18.127.1/master-install_rootfs.tar.gz  vga=normal verbose=y noplymouth apparmor=0 console=tty0 console=ttyS1,115200 console=tty0
+    prompt 1
+    timeout 1

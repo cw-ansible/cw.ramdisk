@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# ensure /etc/fstab exists in target filesytem otherwise boot fails before
+# mountall.
+
+
+PREREQ="udev"
+prereqs() {
+    echo "$PREREQ"
+}
+
+case $1 in
+    prereqs)
+        prereqs
+        exit 0
+    ;;
+esac
+
+
+fstab=${rootmnt}/etc/fstab
+
+if ! test -e $fstab; then
+    touch $fstab || true
+    if test -n "$tmpfs_boot"; then
+	echo "$tmpfs_boot /boot ext3 rw 0 0" >> ${rootmnt}/etc/fstab
+    elif test -n "$tmpfs_boot_uuid"; then
+	echo "UUID=$tmpfs_boot /boot ext3 rw 0 0" >> ${rootmnt}/etc/fstab
+    fi
+    
+fi

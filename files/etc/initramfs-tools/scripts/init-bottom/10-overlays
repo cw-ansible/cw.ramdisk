@@ -1,0 +1,93 @@
+#!/bin/sh
+
+
+
+PREREQ="udev"
+prereqs() {
+    echo "$PREREQ"
+}
+
+case $1 in
+    prereqs)
+        prereqs
+        exit 0
+    ;;
+esac
+
+#set -x
+
+if test -e /scripts/functions; then
+    . /scripts/functions
+fi
+
+host=$(uname -n)
+
+overlays=${rootmnt}/etc/overlays
+
+if test -e $overlays; then
+    . $overlays
+    for url in $URLS; do
+	[ "$quiet" != "y" ] && log_begin_msg "Retriving $url"
+	case ${url} in
+            *://*)
+            ;;
+            *)
+                url="file://${rootmnt}/${url}"
+                ;;
+        esac
+        tar_flag=
+        case ${url} in
+            *.tar.gz|*.tgz) tar_flag=z ;;
+            *.tar.bz2) tar_flag=j ;;
+            *.tar.xz) tar_flag=J ;;
+        esac
+        curl -o - --no-buffer ${url} \
+	    | tar -C "${rootmnt}" -x --xattrs --xattrs-include='*' \
+		  --selinux --acls -${tar_flag} -f -
+	if test $? -eq 0; then
+ 	    [ "$quiet" != "y" ] && log_end_msg
+	else
+	    log_error_msg "Could not download $url"
+	fi
+    done
+
+    for file in $HARD_LINKS; do
+	# remove file extension
+	file_sans=$(echo "${file}" | sed -n 's/\.[^.]\+$//p')
+	if test -e "${rootmnt}/${file}"; then
+	    [ "$quiet" != "y" ] && log_begin_msg "Hard linking $file_sans to $file"
+	    rm -f "${rootmnt}/${file_sans}"
+	    ln -f "${rootmnt}/${file}" "${rootmnt}${file_sans}"
+  	    [ "$quiet" != "y" ] && log_end_msg
+	else
+	    log_warning_msg "File ${file} not found in ${rootmnt}"
+	fi
+    done
+
+    for file in $LINKS; do
+	# remove file extension
+	file_sans=$(echo "${file}" | sed -n 's/\.[^.]\+$//p')
+	if test -e "${rootmnt}/${file}"; then
+	    [ "$quiet" != "y" ] && log_begin_msg "Linking $file_sans to $file"
+	    rm -rf "${rootmnt}/${file_sans}"
+	    ln -nfs $(basename "${file}") "${rootmnt}${file_sans}"
+  	    [ "$quiet" != "y" ] && log_end_msg
+	else
+	    log_warning_msg "File ${file} not found in ${rootmnt}"
+	fi
+    done
+
+    for file in $COPY; do
+	# remove file extension
+	file_sans=$(echo "${file}" | sed -n 's/\.[^.]\+$//p')
+	if test -e "${rootmnt}/${file}"; then
+	    [ "$quiet" != "y" ] && log_begin_msg "Coping $file_sans to $file"
+	    rm -rf "${rootmnt}/${file_sans}"
+	    cp -a "${rootmnt}/${file}" "${rootmnt}${file_sans}"
+  	    [ "$quiet" != "y" ] && log_end_msg
+	else
+	    log_warning_msg "File ${file} not found in ${rootmnt}"
+	fi
+    done
+
+fi

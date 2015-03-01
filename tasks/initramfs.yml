@@ -1,0 +1,36 @@
+---
+
+- name: install required packages
+  apt: pkg='{{ item }}' update_cache=yes install_recommends=no cache_valid_time=3600
+  with_items:
+    - curl
+    - busybox-initramfs
+    - dropbear
+    - gnupg
+
+
+- name: Add dropbear users
+  lineinfile:
+    dest: '/etc/initramfs-tools/initramfs.conf'
+    regexp: 'DROPBEAR_USERS=.*'
+    line: "DROPBEAR_USERS='{{ ramdisk_dropbear_users }}'"
+    insertafter: EOF
+  when: ramdisk_dropbear_users is defined
+    
+- name: copy initramfs tools
+  copy:
+    src: '{{ item.src }}'
+    dest: '{{ ramdisk_prefix | default("") }}/{{ item.dest | default("/" + item.src) }}'
+    owner: '{{ item.user | default("root") }}'
+    group: '{{ item.group | default("root") }}'
+    mode: '{{ item.group | default("0755") }}'
+  with_items:
+  - src: etc/grub.d/09-ramdisk
+  - src: etc/initramfs-tools/hooks/tmpfs
+  - src: etc/initramfs-tools/scripts/tmpfs
+  - src: etc/initramfs-tools/scripts/init-bottom/00-ensure-fstab
+  - src: etc/initramfs-tools/scripts/init-bottom/00-ensure-wtmp
+  - src: etc/initramfs-tools/scripts/init-bottom/01-fix-network-interface
+  - src: etc/initramfs-tools/scripts/init-bottom/10-overlays
+  - src: tmp/tftpboot/pxelinux.0
+    

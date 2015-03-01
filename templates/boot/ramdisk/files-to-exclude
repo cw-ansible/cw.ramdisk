@@ -1,0 +1,7 @@
+{{ramdisk_target[1:]}}
+{% for f in ramdisk_tar_exclude|default([]) %}
+{{ f }}
+{% endfor %}
+{% for f in ramdisk_tar_exclude_extra|default([]) %}
+{{ f }}
+{% endfor %}

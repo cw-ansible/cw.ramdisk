@@ -1,0 +1,55 @@
+---
+
+# Where to deploy ramdisk script generation
+#
+# This is located in /boot since if ramdisks are locate on the hard drive,
+# this would be the only uncrypted and persistant location.
+#
+# You should not change that location unless you really know what you are doing.
+ramdisk_scripts_location: /boot/ramdisk
+
+
+# Files to exclude from ramdisk image.  If you need other files to be
+# excluded please refer to the ramdisk_tar_exclude_extra option.
+#
+ramdisk_tar_exclude:
+  - 'proc/*'
+  - 'dev/*'
+  - 'sys/*'
+  - 'run/*'
+  - 'tmp/*'
+  - 'var/tmp/*'
+  - '**/lost+found/*'
+  - '**/.bash_history'
+  - '*.old'
+  - 'boot/config-*'
+  - 'boot/grub'
+  - 'boot/initrd.img-*'
+  - 'boot/vmlinuz-*'
+  - 'etc/init/*.override'
+  - 'etc/lvm/*'
+  - 'etc/mtab'
+  - 'etc/fstab'
+  - 'etc/udev/rules.d/*persistent*.rules'
+  - 'etc/upstart.disabled'
+  - 'mnt/**/*'
+  - 'root/system-tmpfs-builder'
+  - 'srv/overlay/*'
+  - 'srv/tmpfs'
+  - 'usr/sbin/policy-rc.d'
+  - 'usr/share/doc/*'
+  - 'usr/src/*'
+  - 'var/agentx/master'
+  - 'var/cache/**/*'
+  - 'var/lib/apt/lists/*'
+  - 'var/lib/dhcp/*.leases'
+  - 'var/lib/dpkg/*-old'
+  - 'var/lib/varnish/*'
+  - 'var/lock/*'
+  - 'var/log/**/*'
+  - 'var/log/*gz*'
+  - 'var/log/*log*'
+  - 'var/log/*tmp*'
+  - 'var/run/**/*'
+  - 'var/spool/postfix/**/*'
+  - 'var/spool/smtpd/**/*'

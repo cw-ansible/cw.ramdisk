@@ -1,0 +1,91 @@
+#!/bin/sh
+
+. /usr/share/initramfs-tools/hook-functions
+. "$CONFDIR/initramfs.conf"
+
+BIN_FILES="
+/usr/bin/curl
+/bin/ping
+/bin/tar
+/usr/bin/gpg
+/bin/gzip
+/bin/bzip2
+/usr/bin/compress
+/bin/xz
+/usr/bin/lzip
+/usr/bin/lzop
+/usr/bin/lzma
+"
+
+SBIN_FILES="/usr/sbin/dropbear"
+
+
+# Change initramfs root directory to /home/root since rootmnt is already
+# bound to /root and will overwrite ssh keys.
+ROOT_HOME='/home/root'
+
+for f in $BIN_FILES; do
+    if test -e $f; then
+	copy_exec $f /bin
+    fi
+done
+
+for f in $SBIN_FILES; do
+    if test -e $f; then
+	copy_exec $f /sbin
+    fi
+done
+
+# Don't check askpass existance since we need it
+copy_exec /lib/cryptsetup/askpass
+
+
+# By default dropbear only works if hard drive is encrypted
+# (i.e. /etc/cryptab is present).
+# Here we want to be able to log into the initrd during boot time. Thus we
+# need to:
+#  - Copy the dropbear executable,
+#  - Create the nsswitch database (nsswitch.conf and passwd)
+#  - Create the ssh server keys. As we don't mess users with ssh host keys,
+#    we convert the openssh server key to dropbear's.
+#  - By default only root can login thus we keep root's authorized_keys, but
+#    is someone needs to log into the initrd, we keep their keys. Other
+#    users allows to log into initrd are defined in DROPBEAR_USERS (in
+#    /etc/initramfs-tools/initramfs.conf).
+if test -e "/usr/sbin/dropbear"; then
+    # copy required libs
+    LIBC_DIR=$(ldd /usr/sbin/dropbear | sed -n -e \
+					    's,.* => \(/lib.*\)/libc\.so\..*,\1,p')
+    for so in $(find "$LIBC_DIR" -name 'libnss_compat*'); do
+        copy_exec "$so"
+    done
+
+    # Create credentials entries for root
+    echo 'passwd: compat' > "$DESTDIR/etc/nsswitch.conf"
+    echo "root:x:0:0:root:$ROOT_HOME:/bin/sh" > "$DESTDIR/etc/passwd"
+    mkdir -p $CONFDIR/etc/dropbear
+    # Convert host key into initramfs' dropbear
+    /usr/lib/dropbear/dropbearconvert \
+	openssh dropbear \
+	/etc/ssh/ssh_host_rsa_key \
+	$CONFDIR/etc/dropbear/dropbear_rsa_host_key
+
+    mkdir -p "$CONFDIR/$ROOT_HOME/.ssh"
+
+    if test -n "$DROPBEAR_USERS"; then
+	rm -f "$CONFDIR/$ROOT_HOME/.ssh/authorized_keys"
+	for user in $DROPBEAR_USERS; do
+	    cat $(getent passwd $user | cut -d: -f6)/.ssh/authorized_keys \
+		>> "$CONFDIR/$ROOT_HOME/.ssh/authorized_keys"
+	done
+    else
+	cat $(getent passwd root | cut -d: -f6)/.ssh/authorized_keys \
+	    > "$CONFDIR/$ROOT_HOME/.ssh/authorized_keys"
+    fi
+    
+    # Finally copy root files to initramfs
+    mkdir -p "$DESTDIR/$ROOT_HOME/.ssh"
+    cp $CONFDIR/$ROOT_HOME/.ssh/authorized_keys "$DESTDIR/$ROOT_HOME/.ssh/"
+    cp -R $CONFDIR/etc/dropbear "$DESTDIR/etc/"
+    
+fi

@@ -1,0 +1,37 @@
+---
+
+- name: Create ramdisk generation directory
+  file:
+    path: '{{ item }}'
+    recurse: yes
+    state: directory
+  with_items:
+    - '{{ ramdisk_prefix | default("") }}/{{ ramdisk_scripts_location }}'
+    - '{{ ramdisk_prefix | default("") }}/{{ ramdisk_target }}'
+    - '{{ ramdisk_prefix | default("") }}/{{ ramdisk_target }}/pxelinux.cfg'
+
+- name: generate ramdisk exclude file
+  template:
+    src: '{{ item.src }}'
+    dest: '{{ ramdisk_prefix | default("")}}/{{ item.dest | default(item.src) }}'
+  with_items:
+    - src: boot/ramdisk/files-to-exclude
+    - src: boot/ramdisk/ramdisk.conf
+    - src: tmp/tftpboot/pxelinux.cfg/default
+
+    
+- name: copy update-ramdisk tool
+  copy:
+    src: boot/ramdisk/update-ramdisk
+    dest: '{{ ramdisk_prefix | default("") }}/boot/ramdisk/update-ramdisk'
+    mode: '0755'
+
+- name: link update-ramdisk
+  file:
+    src: /boot/ramdisk/update-ramdisk
+    dest: '{{ ramdisk_prefix | default("") }}/usr/sbin/update-ramdisk'
+    state: link
+    force: yes
+    
+- include: initramfs.yml
+- include: build-ramdisk.yml

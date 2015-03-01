@@ -1,0 +1,109 @@
+#!/bin/bash
+
+
+exclude_from=/boot/ramdisk/files-to-exclude
+tar_opts="--preserve-permissions --numeric-owner"
+tar=$(which tar)
+
+target_ext="tgz"
+target=/tmp/tftpboot/$(hostname -s)_rootfs.${target_ext}
+
+update_initramfs=$(which update-initramfs)
+update_grub=$(which update-grub)
+
+gpg=$(which gpg)
+gpg_fifo=$(dirname $target)/pass
+gpg_cipher=ASE256
+
+if test -e /boot/ramdisk/ramdisk.conf; then
+    . /boot/ramdisk/ramdisk.conf
+fi
+
+# http://superuser.com/questions/279325
+gpg_opts="--symmetric --cipher-algo $gpg_cipher --passphrase-file $gpg_fifo --passphrase-fd 3"
+gpg_filter="cat"
+
+
+# check for tar xattrs support
+$tar --help | grep -q -F -- '--xattr'
+if test $? -eq 0; then
+    tar_opts="$tar_opts --xattrs --xattrs-include '*' --selinux --acls"
+fi
+
+
+_get_tar_compression() {
+    local file=$(basename $1 .gpg)
+    case ${file} in
+	*.tar.gz|*.tgz) echo '--gzip' ;;
+        *.tar.bz2|*.tbz2) echo '--bzip2' ;;
+	*.tar.Z|*.taz) echo '--compress' ;;
+        *.tar.xz) echo '--xz' ;;
+	*.tar.lz|*.tlz) echo '--lzip' ;;
+	*.tar.lzo|*.tzo) echo '--lzop' ;;
+	*.tar.lzma) echo '--lzma' ;;
+    esac
+}
+
+_get_gpg_filter() {
+    local file=$1
+    case ${file} in
+	*.gpg)
+	    if ! test -e ${gpg_fifo}; then
+		mkfifo ${gpg_fifo}
+	    fi
+	    if test -z "$gpg_passphrase"; then
+		cat <<EOF
+No GPG passphrase provided. You can define a passphrase by running:
+
+   echo 'S3creTp@ssPr4se' > $gpg_fifo
+
+I will wait until you provide one
+EOF
+	    else
+		echo "$gpg_passphrase" > $gpg_fifo &
+	    fi
+	    gpg_filter="${gpg} ${gpg_opts}"
+	    ;;
+	*) gpg_filter="cat" ;;
+    esac
+}
+
+make_ramdisk() {
+    mkdir -p $(dirname $target)
+    _get_gpg_filter "$target"
+    # remove extentions from $target 
+    local target_basename=$(basename $target | sed 's/\(\.\(tar\.\(gz\|bz2\|Z\|xz\|lz\|lzo\|lzma\)\)\|\(tgz\|tbz2\|taz\|tlz\|tzo\)\)\(\.gpg\)\?//')
+    ${tar} ${tar_opts} \
+	   --anchored \
+	   --exclude-from "${exclude_from}" \
+	   --directory / \
+	   --create \
+	   --exclude "./boot/${target_basename}*" \
+	   --exclude "./$(dirname $target)/${target_basename}*" \
+	   $(_get_tar_compression $target) \
+	   . | $gpg_filter > $target.new
+    mv $target.new $target
+    if test -n "$move_to_boot"; then
+	cp $target /boot/$(basename $target)
+    fi
+}
+
+update_initramfs () {
+    # Use a shared memory as TMPDIR for update-initramfs
+    TMPDIR=/run/shm ${update_initramfs} -k all -u
+}
+
+update_grub () {
+    ${update_grub}
+}
+
+
+copy_kernel_files () {
+    cp /{vmlinuz,initrd.img} $target_dir
+    chmod 644 $target_dir/{vmlinuz,initrd.img}
+}
+
+update_initramfs
+update_grub
+make_ramdisk
+copy_kernel_files
