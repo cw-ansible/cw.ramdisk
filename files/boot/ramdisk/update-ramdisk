@@ -2,7 +2,7 @@
 
 
 exclude_from=/boot/ramdisk/files-to-exclude
-tar_opts="--preserve-permissions --numeric-owner"
+tar_opts="--anchored --preserve-permissions --numeric-owner"
 tar=$(which tar)
 
 target_ext="tgz"
