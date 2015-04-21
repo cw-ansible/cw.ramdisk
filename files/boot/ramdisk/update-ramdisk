@@ -84,7 +84,8 @@ make_ramdisk() {
 	   . | $gpg_filter > $target.new
     mv $target.new $target
     if test -n "$move_to_boot"; then
-	cp $target /boot/$(basename $target)
+	mkdir -p /boot/tmpfs
+	cp $target /boot/tmpfs/$(basename $target)
     fi
 }
 

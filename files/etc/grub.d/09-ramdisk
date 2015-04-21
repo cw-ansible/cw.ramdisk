@@ -189,7 +189,7 @@ EOF
 # EOF
 #   else
     sed "s/^/$submenu_indentation/" << EOF
-	linux	${rel_dirname}/${basename} boot=tmpfs root=$(basename $target) tmpfs_boot=$GRUB_DEVICE_BOOT tmpfs_boot_uuid=$GRUB_DEVICE_BOOT_UUID ro ${args}
+	linux	${rel_dirname}/${basename} boot=tmpfs root=tmpfs/$(basename $target) tmpfs_boot=$GRUB_DEVICE_BOOT tmpfs_boot_uuid=$GRUB_DEVICE_BOOT_UUID ro ${args}
 EOF
     #  fi
   if test -n "${initrd}" ; then

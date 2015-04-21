@@ -25,6 +25,7 @@ ramdisk_tar_exclude:
   - './boot/config-*'
   - './boot/grub'
   - './boot/initrd.img-*'
+  - './boot/tmpfs/*'
   - './boot/vmlinuz-*'
   - './etc/init/*.override'
   - './etc/lvm/*'
