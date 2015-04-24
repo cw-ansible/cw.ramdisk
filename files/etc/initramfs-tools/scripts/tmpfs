@@ -43,6 +43,30 @@ DEVICE_MAX_TRIES=10
 LOCAL_DRIVE_MAX_TRIES=30
 
 
+# On some server the network interface is unpredictable, and since we don't
+# have udev persistent rules on we thus have to force it to be sure tg3 is
+# the first eths and bnx2x comes after that.
+# See also _reload_modules function.
+MODULE_ORDER="tg3 bnx2x"
+
+_reload_modules() {
+    local modules_to_load=""
+    for mod in $MODULE_ORDER; do
+	grep -q "^$mod[[:space:]]" /proc/modules
+	if test $? -eq 0; then
+            log_begin_msg "Removing module $mod"
+	    rmmod $mod
+	    modules_to_load="$modules_to_load $mod"
+	    log_end_msg
+	fi
+    done
+    for mod in $modules_to_load; do
+	log_loading_msg "Loading module $mod"
+	modprobe $mod
+	log_end_msg
+    done
+}
+
 _set_network() {
     # give a chance for tg3 links to come up.
     for DEVICE in $(ifconfig -a | awk '{if($2=="Link"&&$3=="encap:Ethernet"){print $1}}'); do
