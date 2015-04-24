@@ -88,17 +88,17 @@ _set_network() {
 # https://www.kernel.org/doc/Documentation/kernel-parameters.txt
 
 # Create a tmpfs into $rootmnt
-# The tmpfs size is given by tmpfs_size or 50% of available memory.
+# The tmpfs size is given by root_tmpfs_size or 50% of available memory.
 #
 # See mount(8)
 _create_tmpfs() {
     df -P | grep -q ${rootmnt}
     if test $? -ne 0; then
 
-	tmpfs_size=${tmpfs_size:-50%}
+	root_tmpfs_size=${root_tmpfs_size:-50%}
 	
-	log_begin_msg "Creating tmpfs root into ${rootmnt} of $(echo ${tmpfs_size} | sed 's/%/%%/g')'."
-	mount -o size=${tmpfs_size} -t tmpfs none ${rootmnt}
+	log_begin_msg "Creating tmpfs root into ${rootmnt} of $(echo ${root_tmpfs_size} | sed 's/%/%%/g')'."
+	mount -o size=${root_tmpfs_size} -t tmpfs none ${rootmnt}
 	log_end_msg
     fi
 }
