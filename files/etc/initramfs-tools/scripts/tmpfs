@@ -21,6 +21,8 @@ if test $? -eq 0; then
     tar_opts="--xattrs --xattrs-include '*' --selinux --acls"
 fi
 
+# Mount type is either local or remote
+mount_type=
 
 # Wee need to unset the ROOT variable since /init call 'parse_numeric' which
 # computes a root block device based upon:
@@ -229,6 +231,14 @@ Please provide one of following boot parameter:
 EOF
     fi
 
+    local rd=${ramdisk_root}
+
+    for location in "" "boot"; do
+	if ! test -e ${local_mount}/${location}/${ramdisk_root}; then
+	    rd=${location}/${ramdisk_root}
+	fi
+    done
+    
     cd ${rootmnt}
     _get_gpg_filer ${local_mount}/${ramdisk_root}
     
@@ -301,9 +311,11 @@ do_tmpfsmount()
     
     case ${ramdisk_root} in
 	*://*/*)
+	    mount_type=remote
 	    _mount_remote
 	    ;;
         *)
+	    mount_type=local
 	    _mount_local
 	    ;;
     esac
@@ -363,13 +375,40 @@ EOF
     done
 
     if [ ! -e ${rootmnt}${init} ]; then
-	panic <<EOF
+	case $mount_type in
+	    'local')
+		if test -e ${local_mount}/boot/${tmpfs_boot}; then
+		    sleep 10
+		    log_begin_msg "Root image found in ${local_mount}/boot/${tmpfs_boot}, trying..."
+		    log_end_msg
+		    export ROOT=boot/${tmpfs_boot}
+		    do_tmpfsmount
+		else
+		    cat <<EOF
+
+*** ERROR ***
+
+Could not find image file in ${tmpfs_boot}. Trying local boot...
+
+EOF
+		    umount -l ${rootmnt}
+		    ## TODO: implement a fallback device
+		    export ROOT=${tmpfs_boot}
+		    export init=${init}
+		    . /scripts/local
+		    mountroot
+		fi
+		;;
+	    'remote')
+		panic <<EOF
 
 *** ERROR ***
 
 Could not find a boot device.
 
 EOF
-    fi
+		;;
+	    esac
+	fi
     
 }
