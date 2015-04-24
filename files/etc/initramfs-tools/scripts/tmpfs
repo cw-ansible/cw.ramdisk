@@ -260,18 +260,22 @@ Please provide one of following boot parameter:
 EOF
     fi
 
-    local rd=${ramdisk_root}
-
+    export fs_type
+    local rd=
     for location in "" "boot"; do
-	if ! test -e ${local_mount}/${location}/${ramdisk_root}; then
+	if test -e ${local_mount}/${location}/${ramdisk_root}; then
 	    rd=${location}/${ramdisk_root}
+
+	    # export boot_prefix for future use in
+	    # scripts/init-bottom/00-ensure-fstab
+	    if test -n "${location}"; then
+		boot_prefix=${location}
+		export boot_prefix
+	    fi
+	    
+	    break
 	fi
     done
-    
-    cd ${rootmnt}
-    _get_gpg_filer ${local_mount}/${ramdisk_root}
-
-
 
     # Try to fallback to an existing system image.
     if test -z "${rd}"; then
@@ -313,6 +317,7 @@ EOF
 		  $tar_opts --file -
     fi
     umount ${local_mount}
+
 }
 
 
@@ -360,7 +365,7 @@ Couldn't download image $url.
 
 No space left on device
 
-Try to increase RAM or diet your image or add 'tmpfs_size' variable on grub
+Try to increase RAM or diet your image or add 'root_tmpfs_size' variable on grub
 parameter.
 
 
@@ -442,6 +447,7 @@ EOF
     done
 
     if [ ! -e ${rootmnt}${init} ]; then
+
 	case $mount_type in
 	    'local')
 		if test -e ${local_mount}/boot/${tmpfs_boot}; then
@@ -475,7 +481,7 @@ Could not find a boot device.
 
 EOF
 		;;
-	    esac
-	fi
+	esac
+    fi
     
 }
