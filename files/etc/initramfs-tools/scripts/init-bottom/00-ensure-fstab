@@ -21,10 +21,16 @@ fstab=${rootmnt}/etc/fstab
 
 if ! test -e $fstab; then
     touch $fstab || true
+
+    mountpoint='/boot'
+    if test -n "${boot_prefix}"; then
+	mountpoint=/boot-volume
+	mkdir -p ${rootmnt}/${mountpoint}
+    fi
     if test -n "$tmpfs_boot"; then
-	echo "$tmpfs_boot /boot ext3 rw 0 0" >> ${rootmnt}/etc/fstab
+	echo "$tmpfs_boot $mountpoint $fs_type rw 0 0" >> ${rootmnt}/etc/fstab
     elif test -n "$tmpfs_boot_uuid"; then
-	echo "UUID=$tmpfs_boot /boot ext3 rw 0 0" >> ${rootmnt}/etc/fstab
+	echo "UUID=$tmpfs_boot_uuid $mountpoint $fs_type rw 0 0" >> ${rootmnt}/etc/fstab
     fi
     
 fi

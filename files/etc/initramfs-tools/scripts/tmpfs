@@ -23,6 +23,9 @@ fi
 
 # Mount type is either local or remote
 mount_type=
+fs_type=
+boot_prefix=
+
 
 # Wee need to unset the ROOT variable since /init call 'parse_numeric' which
 # computes a root block device based upon:
@@ -234,18 +237,17 @@ _mount_local() {
     
     local _dev=
     local _method=
-    local fs_type=
     if test -n "${tmpfs_boot_uuid}"; then
 	log_begin_msg "Mounting UUID ${tmpfs_boot_uuid} to ${local_mount}."
-	fs_type=$(/sbin/blkid -s TYPE -o value ${tmpfs_boot_uuid})
+	fs_type=$(/sbin/blkid -s TYPE -o value /dev/disk/by-uuid/${tmpfs_boot_uuid})
 	_check_local_device "/dev/disk/by-uuid/${tmpfs_boot_uuid}"
-	mount ${fs_type:+-t ${fs_type} } /dev/disk/by-uuid/${tmpfs_boot_uuid} ${local_mount}
+	mount -t ${fs_type} /dev/disk/by-uuid/${tmpfs_boot_uuid} ${local_mount}
 	log_end_msg
     elif test -n "${tmpfs_boot}"; then
 	log_begin_msg "Mounting device ${tmpfs_boot} to ${local_mount}."
 	_check_local_device "${tmpfs_boot}"
 	fs_type=$(/sbin/blkid -s TYPE -o value ${tmpfs_boot})
-	mount ${fs_type:+-t ${fs_type} } ${tmpfs_boot} ${local_mount}
+	mount -t ${fs_type} ${tmpfs_boot} ${local_mount}
 	log_end_msg
     else
 	panic <<EOF
