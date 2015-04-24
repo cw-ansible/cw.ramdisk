@@ -5,6 +5,7 @@
 
 BIN_FILES="
 /usr/bin/curl
+/usr/bin/head
 /bin/ping
 /bin/tar
 /usr/bin/gpg
