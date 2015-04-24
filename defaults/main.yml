@@ -12,8 +12,8 @@
 #
 ramdisk_target: '/tmp/tftpboot/'
 
-# If defined, the ramdisk image will be copied to /boot. Use this option if
-# you don't use a PXE to boot your server.
+# If defined, the ramdisk image will be copied to /boot/tmpfs. Use this
+# option if you don't use a PXE to boot your server.
 #
 #ramdisk_copy_to_boot: yes
 
