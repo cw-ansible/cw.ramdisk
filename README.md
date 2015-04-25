@@ -12,7 +12,7 @@ lang: american
 
 # Ramdisk
 
-Create an image of current intallation for a RAM only system.
+Create an image of current installation for a RAM only system.
 
 
 ## Usage
@@ -22,7 +22,7 @@ Include `cw.ramdisk` role to your playbook.
 ## Description
 
 This module will create an image of the current suitable for a RAM only
-machine running the OS from a tmpfs.
+machine running the OS from a *tmpfs*.
 
 ## Configuration
 
@@ -30,12 +30,12 @@ See specific documentation in `defaults/main.yml`
 
 ## How does it work?
 
-This role deploy in `/boot/ramdisk` the necessary files to create a RAMdisk:
+This role deploy in `/boot/ramdisk` the necessary files to create a *RAMdisk*:
 
-- `update-ramdisk`: A script used to create/update the RAMdisk image.
+- `update-ramdisk`: A script used to create/update the *RAMdisk* image.
 - `files-to-exclude`: A list of files or directory to exclude from the
-  RAMdisk image. This list is must be suitable for `tar` `--exclude-from`
-  and `--anchored` options (please refer to `tar` man page).
+*RAMdisk* image. This list is must be suitable for `tar` `--exclude-from`
+and `--anchored` options (please refer to `tar` man page).
 - `ramdisk.conf` the configuration file used by `update-ramdisk`.
 
 A complete PXELinux environment is generated into `/tmp/tftpboot/` you can
@@ -48,7 +48,7 @@ copy these files into a PXE server. This environment includes:
     |-- initrd.img
     `-- $(hostname -s).tar.gz
 
-If you don't want to use a PXE boot you still can use the RAMdisk from local
+If you don't want to use a PXE boot you still can use the *RAMdisk* from local
 boot. You just have to copy the `$(hostname -s).tar.gz` file into
 `/boot/tmpfs`.
 
@@ -60,11 +60,11 @@ Behind the curtain some other files are required (mainly in
 see the internals.
 
 - `hooks/tmpfs`: ensures that all required binaries are included into the
-  init RAM disk file. It also installs the `ssh` authorized keys (as defined
-  in the `ramdisk_dropbear_users` variable) for the initrd `root`
+  *init* RAM disk file. It also installs the `ssh` authorized keys (as defined
+  in the `ramdisk_dropbear_users` variable) for the *initrd* `root`
   user. Therefore you will be able to log into the system during the boot
   process for debugging purposes or to enter the passphrase to decrypt the
-  RAMdisk image if you have used encryption (see `ramdisk_tar_ext` variable)
+  *RAMdisk* image if you have used encryption (see `ramdisk_tar_ext` variable)
 
 - `scripts/tmpfs`: This script does all the job. It is called using the
   `boot=` kernel option.
@@ -84,9 +84,9 @@ see the internals.
 
 This part is a bit tricky. Basically it is responsible for:
 
-- starting `udev`.
-- setup the network configuration.
-- Mounting the root file system from the RAMdisk image.
+- Starting `udev`.
+- Setup the network configuration.
+- Mounting the root file system from the *RAMdisk* image.
 
 
 #### Network setting
@@ -94,7 +94,7 @@ This part is a bit tricky. Basically it is responsible for:
 Following actions are performed for all interfaces as listed by the
 `ifconfig` command output:
 
-- Bring the interface UP.
+- Bring the interface up.
 - Wait for the interface to be `up` (for a maximum of `$DEVICE_MAX_TRIES`
   defaulted to 10s). for the
 - If the interface is UP run the `configure_networking` function. By default
@@ -104,29 +104,28 @@ Following actions are performed for all interfaces as listed by the
 
 #### Mount the root file system
 
-The root file system is mounted using a `tmpfs`. By default its size is 50%
+The root file system is mounted using a *tmpfs*. By default its size is 50%
 of avalable memory but you can change it using the `root_tmpfs_size` (don't
-use the `tmpfs_size` since it is already use to create a tmpfs for the
+use the `tmpfs_size` since it is already use to create a *tmpfs* for the
 initrd image).
 
-The RAMdisk as given by the `root=` kernel parameter is decompressed into
+The *RAMdisk* as given by the `root=` kernel parameter is decompressed into
 the root file system. If a passphrase is required you can either:
 
 - enter it from the console
-
 - enter it using ssh:
 
-    ssh root@$host echo PASSPHRASE > /lib/cryptsetup/passfifo
+        ssh root@$host 'echo "PASSPHRASE" > /lib/cryptsetup/passfifo'
 
 - enter using the `tmpfs_password=` kernel parameter. THIS METHOD IS
   STRONGLY DISCOURAGED FOR SECURITY REASONS SINCE THE PASSPHRASE WILL BE
-  READABLE FROM /proc/cmdline.
+  READABLE FROM `/proc/cmdline`.
 
 If you are booting from a local drive, you need to pass either a
 `tmpfs_boot_uuid` or `tmpfs_boot` to the kernel in order to find the
-`/boot`. The RAMdisk image is searched into the `tmpfs/{root}`. if the file
-you passed on the kernel parameter is not found, a fallback image is
-searched into the `tmpfs` directory of the boot partition. If no fallback
+`/boot`. The *RAMdisk* image is searched into the `tmpfs/${ROOT}`. if the
+file you passed on the kernel parameter is not found, a fallback image is
+searched into the *tmpfs* directory of the boot partition. If no fallback
 file is found, the system tries to boot from the standard local method. If
 the standard local method fails, the system panics.
 
@@ -140,18 +139,18 @@ the standard local method fails, the system panics.
 - `tmpfs_boot`: the device of where the `/boot` resides (such as `/dev/sda1`)
 - `tmpfs_boot_uuid`: the UUID of the device of where the `/boot` resides
   (such as `3884165d-9bd5-4af3-880e-cdc8e7b371af`).
-- `ROOT`: the URL of the RAMdisk image suitable for curl.
+- `ROOT`: the URL of the *RAMdisk* image suitable for curl.
 - `init`: should be set to `tmpfs`.
-- `tmpfs_password`: The passphrase for encrypted RAMdisks. DO NOT USE THIS.
+- `tmpfs_password`: The passphrase for encrypted *RAMdisks*. DO NOT USE THIS.
 
 Notes:
 
 - `tmpfs_boot_uuid` takes precedence on `tmpfs_boot` if both are given.
 
-## Deploy RAMdisk to a remote system
+## Deploy *RAMdisk* to a remote system
 
 Assuming the remote system has already been booted from a live system
-(LiveCD or an other RAMdisk system) and the hard drive is `/dev/vda`
+(*LiveCD* or an other *RAMdisk* system) and the hard drive is `/dev/vda`
 
 We first need to create partitions with following layout:
 
@@ -159,17 +158,17 @@ We first need to create partitions with following layout:
 - `/dev/vda2`: a big partition for persistent data.
 - `/dev/vda3`: a small partition for `grub_bios`.
 
-    parted /dev/vda -s 'mklabel gpt'
-    parted -a optimal /dev/vda -s 'mkpart boot xfs 2 2G'
-    parted -a optimal /dev/vda -s 'set 1 boot on'
-    parted -a optimal /dev/vda -s 'mkpart data xfs 2G 100%'
-    parted -a optimal /dev/vda -s 'mkpart bios_grub ext2 1 2'
-    parted -a optimal /dev/vda -s 'set 3 bios_grub on'
-    mkfs.xfs /dev/vda1
-    mount /dev/vda1 /boot
+        parted /dev/vda -s 'mklabel gpt'
+        parted -a optimal /dev/vda -s 'mkpart boot xfs 2 2G'
+        parted -a optimal /dev/vda -s 'set 1 boot on'
+        parted -a optimal /dev/vda -s 'mkpart data xfs 2G 100%'
+        parted -a optimal /dev/vda -s 'mkpart bios_grub ext2 1 2'
+        parted -a optimal /dev/vda -s 'set 3 bios_grub on'
+        mkfs.xfs /dev/vda1
+        mount /dev/vda1 /boot
 
 Synchronize both `/boot` and `/etc/grub.d/09-ramdisk` from the master (or an
-other RAMdisk) server:
+other *RAMdisk*) server:
 
     sudo -E rsync -ai --progress  --rsync-path 'sudo rsync' \
 	    /boot/* user@target:/boot/
