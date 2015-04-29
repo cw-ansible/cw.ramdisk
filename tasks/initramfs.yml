@@ -1,12 +1,24 @@
 ---
 
 - name: install required packages
-  apt: pkg='{{ item }}' update_cache=yes install_recommends=no cache_valid_time=3600
+  apt:
+    pkg: '{{ item }}'
+    update_cache: yes
+    install_recommends: no
+    cache_valid_time: 3600
   with_items:
     - curl
-    - busybox-initramfs
     - dropbear
     - gnupg
+
+- name: install required packages
+  apt:
+    pkg: busybox-initramfs
+    install_recommends: no
+    update_cache: yes
+    cache_valid_time: 3600
+  when:
+    ansible_os_family == 'Ubuntu'
 
 
 - name: Add dropbear users
