@@ -100,7 +100,8 @@ update_grub () {
 
 
 copy_kernel_files () {
-    cp /{vmlinuz,initrd.img} $target_dir
+    cp /boot/vmlinuz-$(uname -r) $target_dir/vmlinuz
+    cp /boot/initrd.img-$(uname -r) $target_dir/initrd.img
     chmod 644 $target_dir/{vmlinuz,initrd.img}
 }
 
