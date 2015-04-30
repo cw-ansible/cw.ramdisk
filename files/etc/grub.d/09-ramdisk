@@ -21,27 +21,10 @@ set -e
 # along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
 
 prefix="/usr"
-exec_prefix="/usr"
-datarootdir="/usr/share"
-ubuntu_recovery="1"
-quiet_boot="1"
-quick_boot="1"
-gfxpayload_dynamic="1"
-vt_handoff="1"
+exec_prefix="${prefix}"
+datarootdir="${prefix}/share"
 
-. "${datarootdir}//grub/grub-mkconfig_lib"
-
-# Load ramdisk image name
-if test -e /boot/ramdisk/ramdisk.conf; then
-    . /boot/ramdisk/ramdisk.conf
-fi
-gettext_printf "Using ramdisk image: %s\n" "$(basename $target)" >&2
-
-# # prevent default 10_linux since no harddrive is present.
-# if test -e /etc/grub.d/10_linux; then
-#     chmod -x /etc/grub.d/10_linux
-# fi
-
+. "${datarootdir}/grub/grub-mkconfig_lib"
 
 export TEXTDOMAIN=grub
 export TEXTDOMAINDIR="${datarootdir}/locale"
@@ -51,15 +34,8 @@ CLASS="--class gnu-linux --class gnu --class os"
 if [ "x${GRUB_DISTRIBUTOR}" = "x" ] ; then
   OS=GNU/Linux
 else
-  case ${GRUB_DISTRIBUTOR} in
-    Ubuntu|Kubuntu)
-      OS="${GRUB_DISTRIBUTOR}"
-      ;;
-    *)
-      OS="${GRUB_DISTRIBUTOR} GNU/Linux"
-      ;;
-  esac
-  CLASS="--class $(echo ${GRUB_DISTRIBUTOR} | tr 'A-Z' 'a-z' | cut -d' ' -f1|LC_ALL=C sed 's,[^[:alnum:]_],_,g') ${CLASS}"
+  OS="${GRUB_DISTRIBUTOR} GNU/Linux"
+  CLASS="--class $(echo ${GRUB_DISTRIBUTOR} | tr 'A-Z' 'a-z' | cut -d' ' -f1) ${CLASS}"
 fi
 
 # loop-AES arranges things so that /dev/loop/X can be our root device, but
@@ -83,134 +59,81 @@ else
   LINUX_ROOT_DEVICE=UUID=${GRUB_DEVICE_UUID}
 fi
 
-case x"$GRUB_FS" in
-    xbtrfs)
-	rootsubvol="`make_system_path_relative_to_its_root /`"
-	rootsubvol="${rootsubvol#/}"
-	if [ "x${rootsubvol}" != x ]; then
-	    GRUB_CMDLINE_LINUX="rootflags=subvol=${rootsubvol} ${GRUB_CMDLINE_LINUX}"
-	fi;;
-    xzfs)
-	rpool=`${grub_probe} --device ${GRUB_DEVICE} --target=fs_label 2>/dev/null || true`
-	bootfs="`make_system_path_relative_to_its_root / | sed -e "s,@$,,"`"
-	LINUX_ROOT_DEVICE="ZFS=${rpool}${bootfs}"
-	;;
-esac
-
-title_correction_code=
-
-if [ -x /lib/recovery-mode/recovery-menu ]; then
-    GRUB_CMDLINE_LINUX_RECOVERY=recovery
-else
-    GRUB_CMDLINE_LINUX_RECOVERY=single
-fi
-if [ "$ubuntu_recovery" = 1 ]; then
-    GRUB_CMDLINE_LINUX_RECOVERY="$GRUB_CMDLINE_LINUX_RECOVERY nomodeset"
-fi
-
-if [ "$vt_handoff" = 1 ]; then
-  for word in $GRUB_CMDLINE_LINUX_DEFAULT; do
-    if [ "$word" = splash ]; then
-      GRUB_CMDLINE_LINUX_DEFAULT="$GRUB_CMDLINE_LINUX_DEFAULT \$vt_handoff"
-    fi
-  done
+if [ "x`${grub_probe} --device ${GRUB_DEVICE} --target=fs 2>/dev/null || true`" = xbtrfs ] \
+    || [ "x`stat -f --printf=%T /`" = xbtrfs ]; then
+  rootsubvol="`make_system_path_relative_to_its_root /`"
+  rootsubvol="${rootsubvol#/}"
+  if [ "x${rootsubvol}" != x ]; then
+    GRUB_CMDLINE_LINUX="rootflags=subvol=${rootsubvol} ${GRUB_CMDLINE_LINUX}"
+  fi
 fi
 
 linux_entry ()
 {
   os="$1"
   version="$2"
-  type="$3"
+  recovery="$3"
   args="$4"
-
-  if [ -z "$boot_device_id" ]; then
-      boot_device_id="$(grub_get_device_id "${GRUB_DEVICE}")"
-  fi
-  if [ x$type != xsimple ] ; then
-      case $type in
-	  recovery)
-	      title="$(gettext_printf "%s, with Linux %s (%s)" "${os}" "${version}" "$(gettext "${GRUB_RECOVERY_TITLE}")")" ;;
-	  *)
-	      title="$(gettext_printf "%s, with Linux %s" "${os}" "${version}")" ;;
-      esac
-      if [ x"$title" = x"$GRUB_ACTUAL_DEFAULT" ] || [ x"Previous Linux versions>$title" = x"$GRUB_ACTUAL_DEFAULT" ]; then
-	  replacement_title="$(echo "Advanced options for ${OS}" | sed 's,>,>>,g')>$(echo "$title" | sed 's,>,>>,g')"
-	  quoted="$(echo "$GRUB_ACTUAL_DEFAULT" | grub_quote)"
-	  title_correction_code="${title_correction_code}if [ \"x\$default\" = '$quoted' ]; then default='$(echo "$replacement_title" | grub_quote)'; fi;"
-	  grub_warn "$(gettext_printf "Please don't use old title \`%s' for GRUB_DEFAULT, use \`%s' (for versions before 2.00) or \`%s' (for 2.00 or later)" "$GRUB_ACTUAL_DEFAULT" "$replacement_title" "gnulinux-advanced-$boot_device_id>gnulinux-$version-$type-$boot_device_id")"
-      fi
-      echo "menuentry '$(echo "$title" | grub_quote)' ${CLASS} \$menuentry_id_option 'gnulinux-$version-$type-$boot_device_id' {" | sed "s/^/$submenu_indentation/"
+  if ${recovery} ; then
+    title="$(gettext_quoted "%s, with Linux %s (recovery mode)")"
   else
-      echo "menuentry '$(echo "$os" | grub_quote)' ${CLASS} \$menuentry_id_option 'gnulinux-simple-$boot_device_id' {" | sed "s/^/$submenu_indentation/"
+    title="$(gettext_quoted "%s, with Linux %s")"
   fi
-  if [ "$quick_boot" = 1 ]; then
-      echo "	recordfail" | sed "s/^/$submenu_indentation/"
-  fi
-  if [ x$type != xrecovery ] ; then
-      save_default_entry | grub_add_tab
+  printf "menuentry '${title}' ${CLASS} {\n" "${os}" "${version}"
+  if ! ${recovery} ; then
+      save_default_entry | sed -e "s/^/\t/"
   fi
 
   # Use ELILO's generic "efifb" when it's known to be available.
   # FIXME: We need an interface to select vesafb in case efifb can't be used.
   if [ "x$GRUB_GFXPAYLOAD_LINUX" = x ]; then
-      echo "	load_video" | sed "s/^/$submenu_indentation/"
+      cat << EOF
+	load_video
+EOF
   else
       if [ "x$GRUB_GFXPAYLOAD_LINUX" != xtext ]; then
-	  echo "	load_video" | sed "s/^/$submenu_indentation/"
+	  cat << EOF
+	load_video
+EOF
       fi
-  fi
-  if ([ "$ubuntu_recovery" = 0 ] || [ x$type != xrecovery ]) && \
-     ([ "x$GRUB_GFXPAYLOAD_LINUX" != x ] || [ "$gfxpayload_dynamic" = 1 ]); then
-      echo "	gfxmode \$linux_gfx_mode" | sed "s/^/$submenu_indentation/"
+	  cat << EOF
+	set gfxpayload=$GRUB_GFXPAYLOAD_LINUX
+EOF
   fi
 
-  echo "	insmod gzio" | sed "s/^/$submenu_indentation/"
+  cat << EOF
+	insmod gzio
+EOF
 
   if [ x$dirname = x/ ]; then
     if [ -z "${prepare_root_cache}" ]; then
-      prepare_root_cache="$(prepare_grub_to_access_device ${GRUB_DEVICE} | grub_add_tab)"
+      prepare_root_cache="$(prepare_grub_to_access_device ${GRUB_DEVICE} | sed -e "s/^/\t/")"
     fi
-    printf '%s\n' "${prepare_root_cache}" | sed "s/^/$submenu_indentation/"
+    printf '%s\n' "${prepare_root_cache}"
   else
     if [ -z "${prepare_boot_cache}" ]; then
-      prepare_boot_cache="$(prepare_grub_to_access_device ${GRUB_DEVICE_BOOT} | grub_add_tab)"
+      prepare_boot_cache="$(prepare_grub_to_access_device ${GRUB_DEVICE_BOOT} | sed -e "s/^/\t/")"
     fi
-    printf '%s\n' "${prepare_boot_cache}" | sed "s/^/$submenu_indentation/"
+    printf '%s\n' "${prepare_boot_cache}"
   fi
-  if [ x"$quiet_boot" = x0 ] || [ x"$type" != xsimple ]; then
-    message="$(gettext_printf "Loading Linux %s ..." ${version})"
-    sed "s/^/$submenu_indentation/" << EOF
-	echo	'$(echo "$message" | grub_quote)'
-EOF
-  fi
-#   if test -d /sys/firmware/efi && test -e "${linux}.efi.signed"; then
-#     sed "s/^/$submenu_indentation/" << EOF
-# 	linux	${rel_dirname}/${basename}.efi.signed root=${linux_root_device_thisversion} ro ${args}
-# EOF
-#   else
-    sed "s/^/$submenu_indentation/" << EOF
+  message="$(gettext_printf "Loading Linux %s ..." ${version})"
+  cat << EOF
+	echo	'RAMdisk $message'
 	linux	${rel_dirname}/${basename} boot=tmpfs root=tmpfs/$(basename $target) tmpfs_boot=$GRUB_DEVICE_BOOT tmpfs_boot_uuid=$GRUB_DEVICE_BOOT_UUID ro ${args}
 EOF
-    #  fi
   if test -n "${initrd}" ; then
-    # TRANSLATORS: ramdisk isn't identifier. Should be translated.
-    if [ x"$quiet_boot" = x0 ] || [ x"$type" != xsimple ]; then
-      message="$(gettext_printf "Loading initial ramdisk ...")"
-      sed "s/^/$submenu_indentation/" << EOF
-	echo	'$(echo "$message" | grub_quote)'
-EOF
-    fi
-    sed "s/^/$submenu_indentation/" << EOF
+    message="$(gettext_printf "Loading initial ramdisk ...")"
+    cat << EOF
+	echo	'$message'
 	initrd	${rel_dirname}/${initrd}
 EOF
   fi
-  sed "s/^/$submenu_indentation/" << EOF
+  cat << EOF
 }
 EOF
 }
 
-machine=`uname -m`
-case "x$machine" in
+case x`uname -m` in
     xi?86 | xx86_64)
 	list=`for i in /boot/vmlinuz-* /vmlinuz-* /boot/kernel-* ; do
                   if grub_file_is_not_garbage "$i" ; then echo -n "$i " ; fi
@@ -221,80 +144,12 @@ case "x$machine" in
 	     done` ;;
 esac
 
-case "$machine" in
-    i?86) GENKERNEL_ARCH="x86" ;;
-    mips|mips64) GENKERNEL_ARCH="mips" ;;
-    mipsel|mips64el) GENKERNEL_ARCH="mipsel" ;;
-    arm*) GENKERNEL_ARCH="arm" ;;
-    *) GENKERNEL_ARCH="$machine" ;;
-esac
-
 prepare_boot_cache=
 prepare_root_cache=
-boot_device_id=
-title_correction_code=
 
-cat << 'EOF'
-function gfxmode {
-	set gfxpayload="${1}"
-EOF
-if [ "$vt_handoff" = 1 ]; then
-  cat << 'EOF'
-	if [ "${1}" = "keep" ]; then
-		set vt_handoff=vt.handoff=7
-	else
-		set vt_handoff=
-	fi
-EOF
-fi
-cat << EOF
-}
-EOF
-
-# Use ELILO's generic "efifb" when it's known to be available.
-# FIXME: We need an interface to select vesafb in case efifb can't be used.
-if [ "x$GRUB_GFXPAYLOAD_LINUX" != x ] || [ "$gfxpayload_dynamic" = 0 ]; then
-  echo "set linux_gfx_mode=$GRUB_GFXPAYLOAD_LINUX"
-else
-  cat << EOF
-if [ "\${recordfail}" != 1 ]; then
-  if [ -e \${prefix}/gfxblacklist.txt ]; then
-    if hwmatch \${prefix}/gfxblacklist.txt 3; then
-      if [ \${match} = 0 ]; then
-        set linux_gfx_mode=keep
-      else
-        set linux_gfx_mode=text
-      fi
-    else
-      set linux_gfx_mode=text
-    fi
-  else
-    set linux_gfx_mode=keep
-  fi
-else
-  set linux_gfx_mode=text
-fi
-EOF
-fi
-cat << EOF
-export linux_gfx_mode
-EOF
-
-# Extra indentation to add to menu entries in a submenu. We're not in a submenu
-# yet, so it's empty. In a submenu it will be equal to '\t' (one tab).
-submenu_indentation=""
-
-is_top_level=true
 while [ "x$list" != "x" ] ; do
   linux=`version_find_latest $list`
-  case $linux in
-    *.efi.signed)
-      # We handle these in linux_entry.
-      list=`echo $list | tr ' ' '\n' | grep -vx $linux | tr '\n' ' '`
-      continue
-      ;;
-  esac
-  gettext_printf "Found linux image: %s\n" "$linux" >&2
+  echo "Found linux image: $linux" >&2
   basename=`basename $linux`
   dirname=`dirname $linux`
   rel_dirname=`make_system_path_relative_to_its_root $dirname`
@@ -303,14 +158,12 @@ while [ "x$list" != "x" ] ; do
   linux_root_device_thisversion="${LINUX_ROOT_DEVICE}"
 
   initrd=
-  for i in "initrd.img-${version}" "initrd-${version}.img" "initrd-${version}.gz" \
+  for i in "initrd.img-${version}" "initrd-${version}.img" \
 	   "initrd-${version}" "initramfs-${version}.img" \
 	   "initrd.img-${alt_version}" "initrd-${alt_version}.img" \
 	   "initrd-${alt_version}" "initramfs-${alt_version}.img" \
 	   "initramfs-genkernel-${version}" \
-	   "initramfs-genkernel-${alt_version}" \
-	   "initramfs-genkernel-${GENKERNEL_ARCH}-${version}" \
-	   "initramfs-genkernel-${GENKERNEL_ARCH}-${alt_version}"; do
+	   "initramfs-genkernel-${alt_version}"; do
     if test -e "${dirname}/${i}" ; then
       initrd="$i"
       break
@@ -331,42 +184,19 @@ while [ "x$list" != "x" ] ; do
   fi
 
   if test -n "${initrd}" ; then
-    gettext_printf "Found initrd image: %s\n" "${dirname}/${initrd}" >&2
+    echo "Found initrd image: ${dirname}/${initrd}" >&2
   elif test -z "${initramfs}" ; then
-    # "UUID=" and "ZFS=" magic is parsed by initrd or initramfs.  Since there's
+    # "UUID=" magic is parsed by initrd or initramfs.  Since there's
     # no initrd or builtin initramfs, it can't work here.
     linux_root_device_thisversion=${GRUB_DEVICE}
   fi
 
-  if [ "x$is_top_level" = xtrue ] && [ "x${GRUB_DISABLE_SUBMENU}" != xy ]; then
-    linux_entry "tmpfs: ${OS}" "${version}" simple \
-    "${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}"
-
-    submenu_indentation="$grub_tab"
-
-    if [ -z "$boot_device_id" ]; then
-	boot_device_id="$(grub_get_device_id "${GRUB_DEVICE}")"
-    fi
-    # TRANSLATORS: %s is replaced with an OS name
-    echo "submenu '$(gettext_printf "Advanced options for %s" "${OS}" | grub_quote)' \$menuentry_id_option 'gnulinux-advanced-$boot_device_id' {"
-    is_top_level=false
-  fi
-
-  linux_entry "tmpfs: ${OS}" "${version}" advanced \
-              "${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}"
-  if [ "x${GRUB_DISABLE_RECOVERY}" != "xtrue" ]; then
-    linux_entry "tmpfs: ${OS}" "${version}" recovery \
-                "${GRUB_CMDLINE_LINUX_RECOVERY} ${GRUB_CMDLINE_LINUX}"
-  fi
+  linux_entry "${OS}" "${version}" false \
+      "${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}"
+  # if [ "x${GRUB_DISABLE_RECOVERY}" != "xtrue" ]; then
+  #   linux_entry "${OS}" "${version}" true \
+  # 	"single ${GRUB_CMDLINE_LINUX}"
+  # fi
 
   list=`echo $list | tr ' ' '\n' | grep -vx $linux | tr '\n' ' '`
 done
-
-# If at least one kernel was found, then we need to
-# add a closing '}' for the submenu command.
-if [ x"$is_top_level" != xtrue ]; then
-  echo '}'
-fi
-
-echo "$title_correction_code"
-
