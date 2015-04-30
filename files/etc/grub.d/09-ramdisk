@@ -84,7 +84,7 @@ linux_entry ()
   else
     title="$(gettext_quoted "%s, with Linux %s")"
   fi
-  printf "menuentry '${title}' ${CLASS} {\n" "${os}" "${version}"
+  printf "menuentry 'RAMdisk ${title}' ${CLASS} {\n" "${os}" "${version}"
   if ! ${recovery} ; then
       save_default_entry | sed -e "s/^/\t/"
   fi
@@ -123,7 +123,7 @@ EOF
   fi
   message="$(gettext_printf "Loading Linux %s ..." ${version})"
   cat << EOF
-	echo	'RAMdisk $message'
+	echo	'$message'
 	linux	${rel_dirname}/${basename} boot=tmpfs root=tmpfs/$(basename $target) tmpfs_boot=$GRUB_DEVICE_BOOT tmpfs_boot_uuid=$GRUB_DEVICE_BOOT_UUID ro ${args}
 EOF
   if test -n "${initrd}" ; then
