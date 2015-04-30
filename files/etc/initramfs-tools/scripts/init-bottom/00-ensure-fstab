@@ -4,7 +4,7 @@
 # mountall.
 
 
-PREREQ="udev"
+PREREQ=""
 prereqs() {
     echo "$PREREQ"
 }

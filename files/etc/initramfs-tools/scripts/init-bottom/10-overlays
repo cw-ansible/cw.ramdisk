@@ -2,7 +2,7 @@
 
 
 
-PREREQ="udev"
+PREREQ=""
 prereqs() {
     echo "$PREREQ"
 }
@@ -11,7 +11,7 @@ case $1 in
     prereqs)
         prereqs
         exit 0
-    ;;
+	;;
 esac
 
 #set -x
