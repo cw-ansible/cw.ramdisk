@@ -484,5 +484,11 @@ EOF
 		;;
 	esac
     fi
+
+    # Run tmpfs bottom scripts
+    maybe_break tmpfs-bottom
+    [ "$quiet" != "y" ] && log_begin_msg "Running /scripts/tmpfs-bottom"
+    run_scripts /scripts/tmpfs-bottom
+    [ "$quiet" != "y" ] && log_end_msg
     
 }

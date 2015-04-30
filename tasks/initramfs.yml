@@ -40,9 +40,9 @@
   - src: etc/grub.d/09-ramdisk
   - src: etc/initramfs-tools/hooks/tmpfs
   - src: etc/initramfs-tools/scripts/tmpfs
-  - src: etc/initramfs-tools/scripts/init-bottom/00-ensure-fstab
-  - src: etc/initramfs-tools/scripts/init-bottom/00-ensure-wtmp
-  - src: etc/initramfs-tools/scripts/init-bottom/01-fix-network-interface
-  - src: etc/initramfs-tools/scripts/init-bottom/10-overlays
+  - src: etc/initramfs-tools/scripts/tmpfs-bottom/ensure-fstab
+  - src: etc/initramfs-tools/scripts/tmpfs-bottom/ensure-wtmp
+  - src: etc/initramfs-tools/scripts/tmpfs-bottom/fix-network-interface
+  - src: etc/initramfs-tools/scripts/tmpfs-bottom/overlays
   - src: tmp/tftpboot/pxelinux.0
     

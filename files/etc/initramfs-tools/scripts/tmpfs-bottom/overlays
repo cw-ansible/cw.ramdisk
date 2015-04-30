@@ -1,8 +1,7 @@
 #!/bin/sh
 
 
-
-PREREQ=""
+PREREQ="fix-network-interface"
 prereqs() {
     echo "$PREREQ"
 }

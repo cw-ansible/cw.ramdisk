@@ -2,13 +2,14 @@
 
 - name: Create ramdisk generation directory
   file:
-    path: '{{ item }}'
+    path: '{{ ramdisk_prefix | default("") }}/{{ item }}'
     recurse: yes
     state: directory
   with_items:
-    - '{{ ramdisk_prefix | default("") }}/{{ ramdisk_scripts_location }}'
-    - '{{ ramdisk_prefix | default("") }}/{{ ramdisk_target }}'
-    - '{{ ramdisk_prefix | default("") }}/{{ ramdisk_target }}/pxelinux.cfg'
+    - '{{ ramdisk_scripts_location }}'
+    - '{{ ramdisk_target }}'
+    - '{{ ramdisk_target }}/pxelinux.cfg'
+    - 'etc/initramfs-tools/scripts/tmpfs-bottom'
 
 - name: generate ramdisk exclude file
   template:

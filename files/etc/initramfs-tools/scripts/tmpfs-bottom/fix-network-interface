@@ -1,7 +1,7 @@
 #!/bin/sh
 
 
-PREREQ=""
+PREREQ="ensure-fstab ensure-wtmp"
 prereqs() {
     echo "$PREREQ"
 }
