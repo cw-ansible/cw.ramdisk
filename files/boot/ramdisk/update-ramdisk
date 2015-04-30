@@ -91,7 +91,11 @@ make_ramdisk() {
 
 update_initramfs () {
     # Use a shared memory as TMPDIR for update-initramfs
-    TMPDIR=/run/shm ${update_initramfs} -k all -u
+    local _tmp=$(mktemp -d)
+    mount -t tmpfs -o size=100M update-initramfs $_tmp
+    TMPDIR=$_tmp ${update_initramfs} -k all -u
+    umount $_tmp
+    rmdir $_tmp
 }
 
 update_grub () {
