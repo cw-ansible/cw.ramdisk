@@ -16,7 +16,8 @@ gpg_filter=
 
 # check for tar xattrs support
 tar_opts=
-tar --help | grep -q -F -- '--xattr'
+tar=/bin/tar
+$tar --help | grep -q -F -- '--xattr'
 if test $? -eq 0; then
     tar_opts="--xattrs --xattrs-include '*' --selinux --acls"
 fi
@@ -313,14 +314,14 @@ EOF
 	cd ${rootmnt}
 	_get_gpg_filer ${local_mount}/${rd}
 	${gpg_filter} ${local_mount}/${rd} \
-	    | tar --extract $(_get_tar_compression ${local_mount}/${rd}) \
+	    | $tar --extract $(_get_tar_compression ${local_mount}/${rd}) \
 		  $tar_opts --file -
     fi
     umount ${local_mount}
 
 }
 
-
+# local_mount=/local rootmnt=/root tmpfs_boot=/dev/sdc1 ramdisk_root=master-dhcp.tar.gz  _mount_local
 
 _mount_remote() {
     _tmpfs_proto=$(echo ${ramdisk_root} | sed -n 's,\(.\+\)://\([^/]\+\)/\(.\+\),\1,p')
@@ -353,7 +354,7 @@ _mount_remote() {
 
 	curl -o - --no-buffer ${url} \
 	    | ${gpg_filter} \
-	    | tar --extract $(_get_tar_compression ${url}) \
+	    | $tar --extract $(_get_tar_compression ${url}) \
 		  $tar_opts --file -
 	
 	if test $? -ne 0; then
