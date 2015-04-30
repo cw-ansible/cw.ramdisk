@@ -26,6 +26,11 @@ datarootdir="${prefix}/share"
 
 . "${datarootdir}/grub/grub-mkconfig_lib"
 
+# Load ramdisk image name
+if test -e /boot/ramdisk/ramdisk.conf; then
+    . /boot/ramdisk/ramdisk.conf
+fi
+
 export TEXTDOMAIN=grub
 export TEXTDOMAINDIR="${datarootdir}/locale"
 
