@@ -109,7 +109,17 @@ copy_kernel_files () {
     chmod 644 $target_dir/{vmlinuz,initrd.img}
 }
 
+create_iso_file() {
+    if test -n "$iso_file"; then
+	mkdir -p "$target_dir/boot/grub"
+	cp -a "/boot/ramdisk/grub.cfg" "$target_dir/boot/grub"
+	grub-mkrescue -o "$target_dir/../$iso_file" "$target_dir"
+    fi
+}
+
+
 update_initramfs
 update_grub
 make_ramdisk
 copy_kernel_files
+create_iso_file

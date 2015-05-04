@@ -33,6 +33,9 @@
     dest: '{{ ramdisk_prefix | default("") }}/usr/sbin/update-ramdisk'
     state: link
     force: yes
+
+- include: iso.yml
+  when: ramdisk_iso_file is defined
     
 - include: initramfs.yml
 - include: build-ramdisk.yml

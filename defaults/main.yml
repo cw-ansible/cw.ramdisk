@@ -82,3 +82,8 @@ ramdisk_gpg_cipher: AES256
 # not provide the leading slash.
 #
 #ramdisk_tar_exclude_extra:
+
+# Create a booting CDROM image
+#
+# If defined create a ISO image of current live system.
+#ramdisk_iso_file: live-boot.iso

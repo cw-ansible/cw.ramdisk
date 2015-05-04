@@ -1,0 +1,15 @@
+---
+
+- name: install required packages to create liveCD
+  apt:
+    pkg: '{{ item }}'
+    update_cache: yes
+    install_recommends: no
+    cache_valid_time: 3600
+  with_items:
+    - xorriso
+
+- name: Create grub configuration for LiveCD
+  template:
+    src: boot/ramdisk/grub.cfg
+    dest: /boot/ramdisk/grub.cfg
