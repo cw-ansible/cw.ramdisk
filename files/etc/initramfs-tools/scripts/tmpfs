@@ -458,11 +458,7 @@ EOF
     wait_for_udev 10
     log_end_msg
 
-    if test "$drop_to_initrd" = "yes"; then
-	panic <<EOF
-Dropped to initrd
-EOF
-    fi
+    maybe_break tmpfs-begin
     
     #configure_networking
     _set_network
@@ -478,7 +474,8 @@ EOF
     if test -n "$plymouth"; then
 	plymouth --quit
     fi
-    
+
+    maybe_break tmpfs-mount
     # loop until tmpfs succeeds
     do_tmpfsmount
     while [ ${retry_nr} -lt ${delay} ] && [ ! -e ${rootmnt}${init} ]; do
@@ -512,6 +509,7 @@ EOF
 		    export ROOT=${tmpfs_boot}
 		    export init=${init}
 		    . /scripts/local
+		    maybe_break tmpfs-local
 		    mountroot
 		fi
 		;;

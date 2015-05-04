@@ -131,9 +131,6 @@ fails, the system panics.
 
 ## Additional kernel parameters
 
-- `drop_to_initrd`: if this parameter is `yes` the system panics at early
-  stage. This may be useful for debugging. Note that the network is not set
-  yet, thus you need a console access to the server.
 - `root_tmpfs_size`: the size of the root file system in RAM suitable for
   `mount` `size` option for `tmpfs`, see `mount(8)`. (default `50%`).
 - `tmpfs_boot`: the device of where the `/boot` resides (such as
@@ -143,9 +140,20 @@ fails, the system panics.
 - `init`: should be set to `tmpfs`.
 - `tmpfs_password`: The passphrase for encrypted *RAMdisks*. DO NOT USE THIS.
 
-Notes:
 
-- `tmpfs_boot_uuid` takes precedence on `tmpfs_boot` if both are given.
+## Adding break points
+
+If you need to debug the boot sequence you can add a break point using the
+`break` boot parameter:
+
+- `tmpfs-begin`: Stop just before the network is setup. Please note you
+  won't be able to log using *ssh*, you will need a console access.
+- `tmpfs-mount`: Stop just before mounting the root device. From now you
+  will be able to log using *ssh*.
+- `tmpfs-local`: When the *RAMdisk* image is not found, stop just before
+  running a local startup.
+- `tmpfs-bottom`: Stop just before running the scripts from
+  `/scripts/tmpfs-bottom`.
 
 ## Deploy *RAMdisk* to a remote system
 
