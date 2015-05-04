@@ -121,13 +121,13 @@ the root file system. If a passphrase is required you can either:
   STRONGLY DISCOURAGED FOR SECURITY REASONS SINCE THE PASSPHRASE WILL BE
   READABLE FROM `/proc/cmdline`.
 
-If you are booting from a local drive, you need to pass either a
-`tmpfs_boot_uuid` or `tmpfs_boot` to the kernel in order to find the
-`/boot`. The *RAMdisk* image is searched into the `tmpfs/${ROOT}`. if the
-file you passed on the kernel parameter is not found, a fallback image is
-searched into the *tmpfs* directory of the boot partition. If no fallback
-file is found, the system tries to boot from the standard local method. If
-the standard local method fails, the system panics.
+If you are booting from a local drive, you need to pass a `tmpfs_boot`
+variable to the kernel in order to find the `/boot`. The *RAMdisk* image is
+searched into the `tmpfs/${ROOT}`. if the file you passed on the kernel
+parameter is not found, a fallback image is searched into the *tmpfs*
+directory of the boot partition. If no fallback file is found, the system
+tries to boot from the standard local method. If the standard local method
+fails, the system panics.
 
 ## Additional kernel parameters
 
@@ -136,9 +136,9 @@ the standard local method fails, the system panics.
   yet, thus you need a console access to the server.
 - `root_tmpfs_size`: the size of the root file system in RAM suitable for
   `mount` `size` option for `tmpfs`, see `mount(8)`. (default `50%`).
-- `tmpfs_boot`: the device of where the `/boot` resides (such as `/dev/sda1`)
-- `tmpfs_boot_uuid`: the UUID of the device of where the `/boot` resides
-  (such as `3884165d-9bd5-4af3-880e-cdc8e7b371af`).
+- `tmpfs_boot`: the device of where the `/boot` resides (such as
+  `/dev/sda1`). `tmpfs_boot` also supports `LABEL=`, `UUID=`, and on some
+  Linux versions `PARTLABEL` and `PARTUUID`.
 - `ROOT`: the URL of the *RAMdisk* image suitable for curl.
 - `init`: should be set to `tmpfs`.
 - `tmpfs_password`: The passphrase for encrypted *RAMdisks*. DO NOT USE THIS.

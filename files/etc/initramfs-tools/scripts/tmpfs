@@ -230,6 +230,38 @@ _check_local_device() {
     done
 }
 
+
+## Try to find a boot device as given by first parameter.
+#  the boot device can be something like:
+#    - /dev/sda1
+#    - LABEL=boot
+#    - ID=ata-QEMU_DVD-ROM_QM00003
+#    - UUID=2ce7c176-eb32-4ab7-9c66-5237f6f04a61
+#    - PARTLABEL=primary
+#    - PARTUUID=a7bd135c-9b6c-48b7-b386-cd2f82c8e5f6
+#
+# Note that UUID, PARTUUID and PARTLABEL may not be supported by all Linux
+# versions.
+_find_device() {
+    local boot_device="${1}"
+
+    # if tmpfs_boot is a direct device, use it.
+    echo ${boot_device} | grep -q -F =
+    if test $? -ne 0; then
+	echo ${boot_device}
+	return
+    fi
+
+    local type=$(echo ${boot_device} | cut -f1 -d= | tr 'A-Z' 'a-z')
+    local value=$(echo ${boot_device} | cut -f2 -d=)
+    local device="/dev/disk/by-${type}/${value}"
+
+    if test -e "${device}"; then
+	echo "${device}"
+	return
+    fi
+}
+
 # mount local
 ##
 ##  /dev/vda1:file
@@ -238,28 +270,38 @@ _mount_local() {
     
     local _dev=
     local _method=
-    if test -n "${tmpfs_boot_uuid}"; then
-	log_begin_msg "Mounting UUID ${tmpfs_boot_uuid} to ${local_mount}."
-	fs_type=$(/sbin/blkid -s TYPE -o value /dev/disk/by-uuid/${tmpfs_boot_uuid})
-	_check_local_device "/dev/disk/by-uuid/${tmpfs_boot_uuid}"
-	mount -t ${fs_type} /dev/disk/by-uuid/${tmpfs_boot_uuid} ${local_mount}
-	log_end_msg
-    elif test -n "${tmpfs_boot}"; then
-	log_begin_msg "Mounting device ${tmpfs_boot} to ${local_mount}."
-	_check_local_device "${tmpfs_boot}"
-	fs_type=$(/sbin/blkid -s TYPE -o value ${tmpfs_boot})
-	mount -t ${fs_type} ${tmpfs_boot} ${local_mount}
-	log_end_msg
-    else
+
+    for bd in "${tmpfs_boot}"; do
+	log_begin_msg "Looking for ${bd}"
+	_dev=$(_find_device "${bd}")
+	echo "_dev = $_dev"
+	if test -z "${_dev}"; then
+	    log_failure_msg "not found"
+	    continue
+	fi
+	log_end_msg "Found at ${_dev}"
+	break
+    done
+
+    if test -z "${_dev}"; then
 	panic <<EOF
 
 Cannot find /boot device partition.
-Please provide one of following boot parameter:
-  - 'tmpfs_boot' a block device such as /dev/sda1
-  - 'tmpfs_boot_uuid' a UUID such as 3884165d-9bd5-4af3-880e-cdc8e7b371af
+Please provide a tmpfs_boot as kernel boot parameter:
+  - tmpfs_boot=/dev/sda1
+  - tmpfs_boot=LABEL=boot
+  - tmpfs_boot=ID=ata-QEMU_DVD-ROM_QM00003
+  - tmpfs_boot=UUID=2ce7c176-eb32-4ab7-9c66-5237f6f04a61
+  - tmpfs_boot=PARTLABEL=primary
+  - tmpfs_boot=PARTUUID=a7bd135c-9b6c-48b7-b386-cd2f82c8e5f6
 
 EOF
     fi
+
+    
+    fs_type=$(/sbin/blkid -s TYPE -o value ${_dev})
+    _check_local_device "${_dev}"
+    mount -t ${fs_type} "${_dev}" ${local_mount}
 
     export fs_type
     local rd=
