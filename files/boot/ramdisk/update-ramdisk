@@ -86,6 +86,8 @@ make_ramdisk() {
     if test -n "$move_to_boot"; then
 	mkdir -p /boot/tmpfs
 	cp $target /boot/tmpfs/$(basename $target)
+	ln -nfs ../vmlinuz-$(uname -r) /boot/tmpfs/vmlinuz
+	ln -nfs ../initrd.img-$(uname -r) /boot/tmpfs/initrd.img
     fi
 }
 
@@ -113,9 +115,18 @@ copy_kernel_files () {
 
 create_iso_file() {
     if test -n "$iso_file"; then
-	mkdir -p "$target_dir/boot/grub"
-	cp -a "/boot/ramdisk/grub.cfg" "$target_dir/boot/grub"
-	grub-mkrescue -o "$target_dir/../$iso_file" "$target_dir"
+	mkdir -p "$target_dir/grub"
+	cat<<EOF > "$target_dir/grub/grub.cfg"
+
+set default="0"
+set timeout=5
+
+EOF
+	/etc/grub.d/09-ramdisk >> "$target_dir/grub/grub.cfg"
+
+
+
+	grub-mkrescue -o "$target_dir/../../$iso_file" "$target_dir/.."
     fi
 }
 
