@@ -28,9 +28,8 @@ if ! test -e $fstab; then
 	mkdir -p ${rootmnt}/${mountpoint}
     fi
     if test -n "$tmpfs_boot"; then
-	echo "$tmpfs_boot $mountpoint $fs_type rw 0 0" >> ${rootmnt}/etc/fstab
-    elif test -n "$tmpfs_boot_uuid"; then
-	echo "UUID=$tmpfs_boot_uuid $mountpoint $fs_type rw 0 0" >> ${rootmnt}/etc/fstab
+	if test $fs_type != 'iso9660'; then
+	    echo "$tmpfs_boot $mountpoint $fs_type rw 0 0" >> ${rootmnt}/etc/fstab
+	fi
     fi
-    
 fi
