@@ -37,10 +37,10 @@ cat <<EOF
 # \$3: rel_dirname
 function setup_tmpfs_vars {
     if test "\$root" == "pxe"; then
-        set kernel="(pxe)$GRUB_TMPFS_PXE_PREFIX/$GRUB_TMPFS_PXE_ROLE/vmlinuz"
-        set initrd="(pxe)$GRUB_TMPFS_PXE_PREFIX/$GRUB_TMPFS_PXE_ROLE/initrd"
+        set kernel="(pxe)$grub_tmpfs_pxe_prefix/$grub_tmpfs_pxe_role/vmlinuz"
+        set initrd="(pxe)$grub_tmpfs_pxe_prefix/$grub_tmpfs_pxe_role/initrd"
         set tmpfs_boot=""
-        set tmpfs_root="$GRUB_TMPFS_PXE_URL/$(basename $target)"
+        set tmpfs_root="$grub_tmpfs_pxe_url/$(basename $target)"
     elif test "\$root" == "hd96"; then
         set kernel="/boot/\${1}"
         set initrd="/boot/\${2}"
