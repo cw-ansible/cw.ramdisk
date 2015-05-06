@@ -282,6 +282,7 @@ _mount_local() {
 	    continue
 	fi
 	log_end_msg "Found at ${_dev}"
+	tmpfs_boot=${_dev}
 	break
     done
 
