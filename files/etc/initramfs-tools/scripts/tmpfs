@@ -273,7 +273,7 @@ _mount_local() {
     local _dev=
     local _method=
 
-    for bd in "${tmpfs_boot}"; do
+    for bd in ${tmpfs_boot}; do
 	log_begin_msg "Looking for ${bd}"
 	_dev=$(_find_device "${bd}")
 	echo "_dev = $_dev"
