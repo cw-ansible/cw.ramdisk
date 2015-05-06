@@ -37,10 +37,15 @@
     group: '{{ item.group | default("root") }}'
     mode: '{{ item.group | default("0755") }}'
   with_items:
-  - src: etc/grub.d/09-ramdisk
   - src: etc/initramfs-tools/hooks/tmpfs
   - src: etc/initramfs-tools/scripts/tmpfs
   - src: etc/initramfs-tools/scripts/tmpfs-bottom/ensure-fstab
   - src: etc/initramfs-tools/scripts/tmpfs-bottom/ensure-wtmp
   - src: etc/initramfs-tools/scripts/tmpfs-bottom/fix-network-interface
   - src: etc/initramfs-tools/scripts/tmpfs-bottom/overlays
+
+- name: link RAMdisk grub snippet
+  file:
+    src: /boot/ramdisk/ramdisk-grub
+    dest: '{{ ramdisk_prefix | default("") }}/etc/grub.d/09-ramdisk'
+    state: link

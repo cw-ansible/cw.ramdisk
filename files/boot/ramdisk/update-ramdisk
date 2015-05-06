@@ -122,7 +122,7 @@ set default="0"
 set timeout=5
 
 EOF
-	/etc/grub.d/09-ramdisk >> "$target_dir/grub/grub.cfg"
+	/boot/ramdisk/ramdisk-grub >> "$target_dir/grub/grub.cfg"
 
 
 cat<<EOF >> "$target_dir/grub/grub.cfg"

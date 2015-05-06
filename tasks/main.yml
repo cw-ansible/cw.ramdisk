@@ -20,9 +20,12 @@
     
 - name: copy update-ramdisk tool
   copy:
-    src: boot/ramdisk/update-ramdisk
-    dest: '{{ ramdisk_prefix | default("") }}/boot/ramdisk/update-ramdisk'
+    src: '{{ item.src }}'
+    dest: '{{ ramdisk_prefix | default("") }}{{ item.dest | default("/" + item.src)}}'
     mode: '0755'
+  with_items:
+    - src: boot/ramdisk/update-ramdisk
+    - src: boot/ramdisk/ramdisk-grub
 
 - name: link update-ramdisk
   file:
