@@ -125,6 +125,60 @@ EOF
 	/etc/grub.d/09-ramdisk >> "$target_dir/grub/grub.cfg"
 
 
+cat<<EOF >> "$target_dir/grub/grub.cfg"
+
+submenu "System information" {
+
+  menuentry "Show partitions" {
+    ls
+    read
+  }
+  menuentry "Show APM information" {
+    lsapm
+    read
+  }
+  menuentry "List PCI devices" {
+    lspci
+    read
+  }
+  menuentry "ACPI Information" {
+   lsacpi
+    read
+  }
+
+  menuentry "Firmware memory map" {
+    lsacpi
+    read
+  }
+  menuentry "Show loaded modules" {
+    lsmod
+    read
+  }
+
+  menuentry "List video modes" {
+    vbeinfo
+    read
+  }
+}
+
+menuentry ' '{
+  true
+}
+
+menuentry "Halt" {
+  echo -n "Really halt system (y/N)? "
+  read ret
+  if [ "$ret" == "y" ]; then
+    halt
+  fi
+}
+
+menuentry "Reboot" {
+  reboot
+}
+
+EOF
+
 
 	grub-mkrescue -o "$target_dir/../../$iso_file" "$target_dir/.."
     fi
