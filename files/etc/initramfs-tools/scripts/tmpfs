@@ -257,8 +257,10 @@ _find_device() {
     local device="/dev/disk/by-${type}/${value}"
 
     if test -e "${device}"; then
-	echo "${device}"
-	return
+	if ! test -d "${device}"; then
+	    echo "${device}"
+	    return
+	fi
     fi
 }
 
