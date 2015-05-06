@@ -104,9 +104,11 @@ update_grub () {
 
 
 copy_kernel_files () {
-    cp /boot/vmlinuz-$(uname -r) $target_dir/vmlinuz
-    cp /boot/initrd.img-$(uname -r) $target_dir/initrd.img
-    chmod 644 $target_dir/{vmlinuz,initrd.img}
+    local kver=$(uname -r)
+    cp /boot/vmlinuz-${kver} /boot/initrd.img-${kver} $target_dir
+    chmod 644 $target_dir/{vmlinuz,initrd.img}-${kver}
+    ln -nfs ../vmlinuz-${kver} $target_dir/tmpfs/vmlinuz
+    ln -nfs ../initrd.img-${kver} $target_dir/tmpfs/initrd.img
 }
 
 create_iso_file() {
