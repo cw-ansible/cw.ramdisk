@@ -8,7 +8,6 @@
   with_items:
     - '{{ ramdisk_scripts_location }}'
     - '{{ ramdisk_target }}'
-    - '{{ ramdisk_target }}/pxelinux.cfg'
     - 'etc/initramfs-tools/scripts/tmpfs-bottom'
 
 - name: generate ramdisk exclude file
@@ -18,8 +17,6 @@
   with_items:
     - src: boot/ramdisk/files-to-exclude
     - src: boot/ramdisk/ramdisk.conf
-    - src: tmp/tftpboot/pxelinux.cfg/default
-
     
 - name: copy update-ramdisk tool
   copy:

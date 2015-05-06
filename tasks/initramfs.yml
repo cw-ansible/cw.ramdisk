@@ -44,5 +44,3 @@
   - src: etc/initramfs-tools/scripts/tmpfs-bottom/ensure-wtmp
   - src: etc/initramfs-tools/scripts/tmpfs-bottom/fix-network-interface
   - src: etc/initramfs-tools/scripts/tmpfs-bottom/overlays
-  - src: tmp/tftpboot/pxelinux.0
-    
