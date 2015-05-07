@@ -36,6 +36,15 @@
 
 - include: iso.yml
   when: ramdisk_iso_file is defined
-    
+
+- name: copy overlay definition file
+  copy:
+    src: '{{ ramdisk_overlay }}'
+    dest: /etc/overlays
+    mode: '0600'
+    owner: root
+    group: root
+  when: ramdisk_overlay is defined
+  
 - include: initramfs.yml
 - include: build-ramdisk.yml

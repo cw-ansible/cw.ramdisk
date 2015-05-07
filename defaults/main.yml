@@ -128,3 +128,13 @@ ramdisk_gpg_cipher: AES256
 # set to "http://10.10.10.1/role"
 #
 #ramdisk_pxe_url:
+
+# Overlay configuration: path to a file to be copied to /etc/overlays.
+#
+# An overlay is executed once the ramdisk is setup. This allows you to have
+# the same RAMdisk to run multiple servers.
+#
+# TODO: Add some documentation about overlays.
+#
+# ramdisk_overlay:
+#
