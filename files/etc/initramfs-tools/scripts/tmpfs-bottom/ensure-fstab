@@ -28,8 +28,13 @@ if ! test -e $fstab; then
 	mkdir -p ${rootmnt}/${mountpoint}
     fi
     if test -n "$tmpfs_boot"; then
+	local mp="$mountpoint"
+	if test -n "$tmpfs_boot_prefix"; then
+	    mp=/boot-device
+	    mkdir -p $rootmnt/$mp
+	fi
 	if test $fs_type != 'iso9660'; then
-	    echo "$tmpfs_boot $mountpoint $fs_type rw 0 0" >> ${rootmnt}/etc/fstab
+	    echo "$tmpfs_boot $mp $fs_type rw 0 0" >> ${rootmnt}/etc/fstab
 	fi
     fi
 fi

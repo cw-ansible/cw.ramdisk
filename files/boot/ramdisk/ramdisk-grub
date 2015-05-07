@@ -41,16 +41,19 @@ function setup_tmpfs_vars {
         set initrd="(pxe)$grub_tmpfs_pxe_prefix/$grub_tmpfs_pxe_role/initrd"
         set tmpfs_boot=""
         set tmpfs_root="$grub_tmpfs_pxe_url/$(basename $target)"
+        set tmpfs_boot_prefix=""
     elif test "\$root" == "hd96"; then
         set kernel="/boot/\${1}"
         set initrd="/boot/\${2}"
         set tmpfs_boot="LABEL=ISOIMAGE"
         set tmpfs_root="/boot/tmpfs/$(basename $target)"
+        set tmpfs_boot_prefix=""
     else
         set kernel="\${3}/\${1}"
         set initrd="\${3}/\${2}"
         tmpfs_boot="UUID=$GRUB_DEVICE_BOOT_UUID"
         set tmpfs_root="\${3}/tmpfs/$(basename $target)"
+        set tmpfs_boot_prefix="\${3}"
     fi
 }
 
@@ -91,7 +94,7 @@ EOF
   message="$(gettext_printf "Loading Linux %s ..." ${version})"
   cat << EOF
 	echo	'$message'
-	linux	\$kernel boot=tmpfs root=\$tmpfs_root tmpfs_boot=\$tmpfs_boot ro ${args}
+	linux	\$kernel boot=tmpfs root=\$tmpfs_root tmpfs_boot=\$tmpfs_boot tmpfs_boot_prefix=\$tmpfs_boot_prefix ro ${args}
 EOF
   if test -n "${initrd}" ; then
     message="$(gettext_printf "Loading initial ramdisk ...")"
