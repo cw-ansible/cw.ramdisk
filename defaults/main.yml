@@ -138,3 +138,59 @@ ramdisk_gpg_cipher: AES256
 #
 # ramdisk_overlay:
 #
+
+# Create a booting CDROM image
+#
+# If defined create a ISO image of current live system.
+#ramdisk_iso_file: live-boot.iso
+
+
+# If the PXE files are not stored at the root of the TFTP repository you must
+# declare here the path to the grub PXE files.
+#
+# For example if your TFTP root is /srv/tftp and all you grub PXE is in
+# /srv/tftp/ramdisk, your system looks like:
+#
+# -- /srv/tftp
+#    +-- ramdisk
+#    |   +-- boot
+#    |   |   +-- grub
+#    |   |   |   +-- grub.cfg
+#    |   |   |   `-- (other grub files)
+#    |   +-- ROLE1
+#    |   |   +-- vmlinuz
+#    |   |   +-- initrd.img
+#    |   |   `-- ROLE1.tar.gz
+#    |   +-- ROLE2
+#    |   |   +-- vmlinuz
+#    |   |   +-- initrd.img
+#    |   |   `-- ROLE2.tar.gz
+#    |   `-- ROLEn
+#    `-- (other tftp files)
+#
+# You shoud thus set ramdisk_pxe_prefix to "ramdisk"
+#
+#ramdisk_pxe_prefix:
+
+# If you are using multiple roles you can define which role this image
+# should be.
+#
+#ramdisk_pxe_role:
+
+
+# The url from where the RAMdisk is downloaded.
+#
+# If the URL is: http://10.10.10.1/role/file.tar.gz, the PXE URL should be
+# set to "http://10.10.10.1/role"
+#
+#ramdisk_pxe_url:
+
+# Overlay configuration: path to a file to be copied to /etc/overlays.
+#
+# An overlay is executed once the ramdisk is setup. This allows you to have
+# the same RAMdisk to run multiple servers.
+#
+# TODO: Add some documentation about overlays.
+#
+# ramdisk_overlay:
+#
