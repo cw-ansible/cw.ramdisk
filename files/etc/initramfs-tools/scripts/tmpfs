@@ -309,6 +309,7 @@ EOF
     export fs_type
     local rd=
     for location in "" "boot"; do
+	log_begin_msg "Trying ${local_mount}/${location}/${ramdisk_root}"
 	if test -e ${local_mount}/${location}/${ramdisk_root}; then
 	    rd=${location}/${ramdisk_root}
 
@@ -318,18 +319,21 @@ EOF
 		boot_prefix=${location}
 		export boot_prefix
 	    fi
-	    
+	    log_end_msg "Done"
 	    break
 	fi
+	log_failure_msg "Not found."
     done
 
     # Try to fallback to an existing system image.
     if test -z "${rd}"; then
+	local _search_prefix=""
 	log_begin_msg "Trying to find a fallback image"
-	log_end_msg
+	#log_end_msg
 	cd ${local_mount}
 	if test -d boot; then
-	    cd boot;
+	    cd boot
+	    _search_prefix="${_search_prefix}/boot"
 	fi
 	if test -d tmpfs; then
 	    rd=$(find tmpfs -type f \
@@ -347,14 +351,19 @@ EOF
 		      -name '*.tar.lzma' -o -name '*.tar.lzma.gpg' \
 			| head -n 1)
 	    if test -n "${rd}"; then
-		log_begin_msg "Found ${rd} ad fallback image"
-		log_end_msg
+		#log_begin_msg "Found ${rd} ad fallback image"
+		rd="${_search_prefix}/${rd}"
+		log_end_msg "${rd}"
+	    else
+		log_failure_msg "None found."
 	    fi
+	else
+	    log_failure_msg "tmpfs directory not found."
 	fi
     fi
 
     if test -n "${rd}"; then
-	log_begin_msg "Using ${rd} as system image"
+	log_begin_msg "Using ${local_mount}/${rd} as system image"
 	log_end_msg
 	cd ${rootmnt}
 	_get_gpg_filer ${local_mount}/${rd}
@@ -507,6 +516,7 @@ EOF
 Could not find image file in ${tmpfs_boot}. Trying local boot...
 
 EOF
+		    sleep 120
 		    umount -l ${rootmnt}
 		    ## TODO: implement a fallback device
 		    export ROOT=${tmpfs_boot}
