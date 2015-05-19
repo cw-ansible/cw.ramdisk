@@ -71,12 +71,34 @@ _reload_modules() {
     done
 }
 
+_set_dns() {
+    device=$1
+    # Generate resolv.conf file if nameserver are given from the
+    # kernel command line.
+    . /run/net-$device.conf
+    rm -f /etc/resolv.conf
+    if ! test "$IPV4DNS0" = "0.0.0.0"; then
+	echo "nameserver $IPV4DNS0" >> /etc/resolv.conf
+	if ! test "$IPV4DNS1" = "0.0.0.0"; then
+	    echo "nameserver $IPV4DNS1" >> /etc/resolv.conf
+	fi
+	if test -n "$DNSDOMAIN"; then
+	    echo "search $DNSDOMAIN" >> /etc/resolv.conf
+	fi
+    else
+	for dns in ${tmpfs_nameserver}; do
+	    echo "nameserver $dns" >> /etc/resolv.conf
+	done
+    fi
+}
+
 _set_network() {
     # give a chance for tg3 links to come up.
     for DEVICE in $(ifconfig -a | awk '{if($2=="Link"&&$3=="encap:Ethernet"){print $1}}'); do
 	# if /run/net-${DEVICE}.conf exists there is a slight chance the
 	# network interface has ben set up
 	if test -e /run/net-${DEVICE}.conf; then
+	    _set_dns ${DEVICE}
 	    return
 	fi
 	log_begin_msg "Bringing $DEVICE up"
@@ -108,6 +130,7 @@ _set_network() {
 	
 	#ipconfig -t 5 $DEVICE
 	if test -e /run/net-$DEVICE.conf;  then
+	    _set_dns ${DEVICE}
             break
 	fi
     done
