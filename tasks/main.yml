@@ -18,21 +18,25 @@
     - src: boot/ramdisk/files-to-exclude
     - src: boot/ramdisk/ramdisk.conf
     
-- name: copy update-ramdisk tool
+- name: copy ramdisk tool
   copy:
     src: '{{ item.src }}'
     dest: '{{ ramdisk_prefix | default("") }}{{ item.dest | default("/" + item.src)}}'
     mode: '0755'
   with_items:
+    - src: boot/ramdisk/deploy-ramdisk
     - src: boot/ramdisk/update-ramdisk
     - src: boot/ramdisk/ramdisk-grub
 
-- name: link update-ramdisk
+- name: link ramdisk tools
   file:
-    src: /boot/ramdisk/update-ramdisk
-    dest: '{{ ramdisk_prefix | default("") }}/usr/sbin/update-ramdisk'
+    src: '/boot/ramdisk/{{ item }}'
+    dest: '{{ ramdisk_prefix | default("") }}/usr/sbin/{{ item }}'
     state: link
     force: yes
+  with_items:
+    - update-ramdisk
+    - deploy-ramdisk
 
 - include: iso.yml
   when: ramdisk_iso_file is defined

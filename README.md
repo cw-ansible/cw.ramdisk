@@ -172,24 +172,18 @@ We first need to create partitions with following layout:
         parted -a optimal /dev/vda -s 'mkpart data xfs 2G 100%'
         parted -a optimal /dev/vda -s 'mkpart bios_grub ext2 1 2'
         parted -a optimal /dev/vda -s 'set 3 bios_grub on'
-        mkfs.xfs /dev/vda1
+        mkfs.xfs -L BOOT /dev/vda1
         mount /dev/vda1 /boot
 
-Synchronize both `/boot` and `/etc/grub.d/09-ramdisk` from the master (or an
-other *RAMdisk*) server:
+Once the partition layout is done on remote server, you only need to
+synchronize *RAMdisk* files:
 
-    sudo -E rsync -ai --progress  --rsync-path 'sudo rsync' \
-	    /boot/* user@target:/boot/
-    sudo -E rsync -ai --progress  --rsync-path 'sudo rsync' \
-	    /etc/grub.d/09-ramdisk user@target:/etc/grub.d
+	deploy-ramdisk host
 
-Finally just install grub to `/dev/vda`, for that we have to make sure that
-`grub-mkconfig` won't fail since it doesn't recognize `/dev/root` as a valid
-device path for the `/` directory.
+If you need remote host to keep its network configuration over reboot (if
+you don't have DHCP server for example), you can run:
 
-	sed -i '/set -e/d' /usr/sbin/grub-mkconfig
-	update-grub
-	grub-install /dev/vda
+	deploy-ramdisk host t
 
 And *voilà* now you can safely reboot the server.
 
