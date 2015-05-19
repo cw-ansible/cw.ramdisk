@@ -83,7 +83,7 @@ make_ramdisk() {
 	   $(_get_tar_compression $target) \
 	   . | $gpg_filter > $target.new
     mv $target.new $target
-    if test -n "$move_to_boot"; then
+    if test -n "$copy_to_boot"; then
 	mkdir -p /boot/tmpfs
 	cp $target /boot/tmpfs/$(basename $target)
 	ln -nfs ../vmlinuz-$(uname -r) /boot/tmpfs/vmlinuz
