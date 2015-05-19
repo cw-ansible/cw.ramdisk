@@ -94,7 +94,7 @@ EOF
   message="$(gettext_printf "Loading Linux %s ..." ${version})"
   cat << EOF
 	echo	'$message'
-	linux	\$kernel boot=tmpfs root=\$tmpfs_root tmpfs_boot=\$tmpfs_boot tmpfs_boot_prefix=\$tmpfs_boot_prefix ro ${args}
+	linux	\$kernel ip=${grub_ip} boot=tmpfs root=\$tmpfs_root tmpfs_boot=\$tmpfs_boot tmpfs_boot_prefix=\$tmpfs_boot_prefix ro ${args}
 EOF
   if test -n "${initrd}" ; then
     message="$(gettext_printf "Loading initial ramdisk ...")"

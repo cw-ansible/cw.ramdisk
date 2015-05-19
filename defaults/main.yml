@@ -194,3 +194,43 @@ ramdisk_gpg_cipher: AES256
 #
 # ramdisk_overlay:
 #
+
+
+# Boot IP configuration.
+#
+# This work as described for the boot IP kernel command line parameter at
+# https://www.kernel.org/doc/Documentation/filesystems/nfs/nfsroot.txt
+#
+# Variables are prefixed with "ramdisk_ip_" and all dash (-) is replaced
+# with an underscore (_).
+#
+# Please note that is you are using RAMDISK_IP_DEVICE, on multiple device
+# system, the one that will be used is the first that received a DHCP reply.
+#
+#
+# IP address of the client.
+#ramdisk_ip_client_ip:
+#
+# IP address of the NFS server.
+#ramdisk_ip_server_ip:
+#
+# IP address of a gateway if the server is on a different subnet.
+#ramdisk_ip_gw_ip:
+#
+# Netmask for local network interface.
+#ramdisk_ip_netmask:
+#
+# Name of the client.
+#ramdisk_ip_hostname:
+#
+# Name of network device to use.
+#ramdisk_ip_device:
+#
+# Method to use for autoconfiguration.
+#ramdisk_ip_autoconf:
+#
+# IP address of first nameserver.
+#ramdisk_ip_dns0_ip:
+#
+# IP address of second nameserver.
+#ramdisk_ip_dns1_ip:
