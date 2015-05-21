@@ -560,5 +560,16 @@ EOF
     [ "$quiet" != "y" ] && log_begin_msg "Running /scripts/tmpfs-bottom"
     run_scripts /scripts/tmpfs-bottom
     [ "$quiet" != "y" ] && log_end_msg
-    
+
+    # if boot interface is configured using static method, it may cause
+    # issue when bringing the interface up from the system (such add
+    # SIOCADDRT: File exists Failed to bring up eth0.). To prevent that we
+    # temporary shut down the interface from the initram disk.
+    for f in /run/net-*.conf; do
+	. $f
+	if ! test $PROTO = "dhcp"; then
+	    ip a d  "$IPV4ADDR"/"$IPV4NETMASK" dev $DEVICE
+	    ifconfig $DEVICE down
+	fi
+    done
 }
