@@ -1,21 +1,29 @@
 #!/bin/sh
 
-target=$1
+target_host=$1
 
-if test -z "$target"; then
+if test -z "$target_host"; then
     echo "$0 TARGET_HOST [network]"
     exit 1
 fi
 
 network=$2
 
-rsync -ai --progress  --rsync-path 'sudo rsync' /boot/* $target:/boot/
+. /boot/ramdisk/ramdisk.conf
+
+
+rsync -ai --progress  --rsync-path 'sudo rsync' /boot/* $target_host:/boot/
+
+# if ramdisk is not copied to /boot/tmpfs get the one from /tmp/tftpboot
+if test -z "${copy_to_boot}"; then
+    rsync -ai --progress  --rsync-path 'sudo rsync' $target $target_host:/boot/tmpfs
+fi
 
 dns0=$(grep '^nameserver ' /etc/resolv.conf | awk '{print $2}' | sort -u | sed -n '1p')
 dns1=$(grep '^nameserver ' /etc/resolv.conf | awk '{print $2}' | sort -u | sed -n '2p')
 
 
-cat <<EOF | ssh $target sudo sh -
+cat <<EOF | ssh $target_host sudo sh -
 sed '/copy_to_boot=/d;' -i /boot/ramdisk/ramdisk.conf
 echo "copy_to_boot=yes" >> /boot/ramdisk/ramdisk.conf
 sed -i 's/^\(set -e\)/# \1/' /usr/sbin/grub-mkconfig
@@ -23,7 +31,7 @@ ln -nfs /boot/ramdisk/ramdisk-grub /etc/grub.d/09-ramdisk
 
 if test -n "$network"; then
   ip_device=eth0
-  ip_hostname=\$(hostname -f)
+  ip_hostname=\$(hostname -s)
   ip_addr=\$(ifconfig \$ip_device | grep 'inet addr:' | sed -n 's/.*addr:\\([^[:space:]]\\+\\).*/\\1/p')
   ip_mask=\$(ifconfig \$ip_device | grep 'inet addr:' | sed -n 's/.*Mask:\\([^[:space:]]\\+\\).*/\\1/p')
   ip_gw_ip=\$(ip -4 route list 0/0 | awk '{print \$3}')
