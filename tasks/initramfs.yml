@@ -10,7 +10,8 @@
     - curl
     - dropbear
     - gnupg
-
+    - python-yaml
+    
 - name: install required packages
   apt:
     pkg: busybox-initramfs

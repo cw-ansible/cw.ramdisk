@@ -17,6 +17,7 @@
   with_items:
     - src: boot/ramdisk/files-to-exclude
     - src: boot/ramdisk/ramdisk.conf
+    - src: boot/ramdisk/overlay.yml
     
 - name: copy ramdisk tool
   copy:
@@ -27,6 +28,7 @@
     - src: boot/ramdisk/deploy-ramdisk
     - src: boot/ramdisk/update-ramdisk
     - src: boot/ramdisk/ramdisk-grub
+    - src: boot/ramdisk/overlay
 
 - name: link ramdisk tools
   file:
@@ -41,14 +43,14 @@
 - include: iso.yml
   when: ramdisk_iso_file is defined
 
-- name: copy overlay definition file
-  copy:
-    src: '{{ ramdisk_overlay }}'
-    dest: /etc/overlays
-    mode: '0600'
-    owner: root
-    group: root
-  when: ramdisk_overlay is defined
+# - name: copy overlay definition file
+#   copy:
+#     src: '{{ ramdisk_overlay }}'
+#     dest: /etc/overlays
+#     mode: '0600'
+#     owner: root
+#     group: root
+#   when: ramdisk_overlay is defined
   
 - include: initramfs.yml
 - include: build-ramdisk.yml
