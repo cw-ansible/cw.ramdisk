@@ -8,7 +8,7 @@
 
 # Copyright © 2015 Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
 # Created: 2015-05-20
-# Last changed: 2015-05-26 16:01:27
+# Last changed: 2015-05-26 17:18:44
 
 # This program is free software. It comes without any warranty, to
 # the extent permitted by applicable law. You can redistribute it
@@ -72,10 +72,6 @@ def load_yaml(filename):
 def expand(s):
     '''Expand S'''
     return string.Template(s).substitute(EXPENSION)
-    # for var in EXPENSION.keys():
-    #     s = s.replace('${%s}' % var, EXPENSION[var])
-    # return s
-
 
 def do_merge_dir(src, dest):
     run(['cp', '-v', '-R', '-n', src, dest])
@@ -115,7 +111,6 @@ def do_execute(hl):
 
             
 def compute_hostbased(yml):
-    print yml['vars']
     if not yml.has_key('vars') or not yml['vars'].has_key('hostbased'):
         return
     for k in yml['vars']['hostbased'].keys():
@@ -124,8 +119,6 @@ def compute_hostbased(yml):
             EXPENSION['HOSTBASED'] = yml['vars']['hostbased'][k]
             return
 
-        
-## TODO: ADD CMD
 def __init__():
     yml = load_yaml('/boot/ramdisk/overlay.yml')
     for y in yml:
