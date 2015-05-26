@@ -8,7 +8,7 @@
 
 # Copyright © 2015 Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
 # Created: 2015-05-20
-# Last changed: 2015-05-21 14:31:15
+# Last changed: 2015-05-26 16:01:27
 
 # This program is free software. It comes without any warranty, to
 # the extent permitted by applicable law. You can redistribute it
@@ -27,12 +27,9 @@ import os
 import shutil
 import subprocess
 import pipes
-
-
-
-
-
 import string
+import shlex
+import sys
 
 def run(cmd, stdout=True, stderr=True):
 #    print(' '.join(pipes.quote(arg) for arg in cmd))
@@ -75,6 +72,9 @@ def load_yaml(filename):
 def expand(s):
     '''Expand S'''
     return string.Template(s).substitute(EXPENSION)
+    # for var in EXPENSION.keys():
+    #     s = s.replace('${%s}' % var, EXPENSION[var])
+    # return s
 
 
 def do_merge_dir(src, dest):
@@ -101,6 +101,19 @@ def do_compute_files(hl, action, relative=False, remove=True):
         # print('%s -> %s' % (src, dest))
         action(src, dest)
 
+def do_execute(hl):
+    for h in hl:
+        h = shlex.split(expand(h))
+        try:
+            proc = run(h)
+        except:
+            pass
+        if proc.returncode != 0:
+            sys.stderr.write("Could not run %s\n" %
+                             (' '.join(pipes.quote(arg) for arg in h)))
+
+
+            
 def compute_hostbased(yml):
     print yml['vars']
     if not yml.has_key('vars') or not yml['vars'].has_key('hostbased'):
@@ -128,6 +141,8 @@ def __init__():
             do_compute_files(y['move'], shutil.move)
         if y.has_key('merge-dir'):
             do_compute_files(y['merge-dir'], do_merge_dir, remove=False)
+        if y.has_key('exec'):
+            do_execute(y['exec'])
 
 if __name__ == "__main__":
     __init__()
