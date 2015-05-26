@@ -33,6 +33,7 @@ ramdisk_tar_exclude:
   - './etc/fstab'
   - './etc/udev/rules.d/*persistent*.rules'
   - './etc/upstart.disabled'
+  - './media/'
   - './mnt/**/*'
   - './root/system-tmpfs-builder'
   - './srv/overlay/*'
