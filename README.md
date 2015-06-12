@@ -6,7 +6,7 @@ lang: american
 -->
 
 [![Build Status](https://travis-ci.org/cw-ansible/cw.ramdisk.svg?branch=master)](https://travis-ci.org/cw-ansible/cw.ramdisk)
-[![Tweet this](http://img.shields.io/badge/%20-Tweet-00aced.svg)](https://twitter.com/intent/tweet?tw_p=tweetbutton&via=renard_0&url=https%3A%2F%2Fgithub.com%2Fcw-ansible%2Fcw.ramdisk&text=Run%20linux%20from%20a%20%23tmpfs%20filesystem%20in%20%23RAM.)
+[![Tweet this](http://img.shields.io/badge/Tweet-it00aced.svg)](https://twitter.com/intent/tweet?tw_p=tweetbutton&via=renard_0&url=https%3A%2F%2Fgithub.com%2Fcw-ansible%2Fcw.ramdisk&text=Run%20linux%20from%20a%20%23tmpfs%20filesystem%20in%20%23RAM.)
 [![Follow me on twitter](http://img.shields.io/badge/Twitter-Follow-00aced.svg)](https://twitter.com/intent/follow?region=follow_link&screen_name=renard_0&tw_p=followbutton)
 
 
