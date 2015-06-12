@@ -17,7 +17,7 @@ fi
 if test "$copy_to_boot" = "yes"; then
     echo "set default=0"
 else
-    echo "set default=1"
+    exit 0
 fi
 
 
