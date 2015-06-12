@@ -39,7 +39,6 @@ ramdisk_tar_exclude:
   - './srv/overlay/*'
   - './srv/tmpfs'
   - './usr/sbin/policy-rc.d'
-  - './usr/share/doc/*'
   - './usr/src/*'
   - './var/agentx/master'
   - './var/cache/**/*'
