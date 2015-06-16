@@ -11,23 +11,30 @@ network=$2
 
 . /boot/ramdisk/ramdisk.conf
 
+if test -z "${deploy_user}"; then
+    echo "No user found to deploy ramdisk to $target_host"
+    exit 1
+fi
 
+if test -z "${deploy_key}"; then
+    echo "No ssh key found for ${deploy_user} to $target_host"
+    exit 1
+fi
+ssh="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l $deploy_user -i $deploy_key"
 
-
-rsync -ai --progress  --rsync-path 'sudo rsync' /boot/* $target_host:/boot/
+sudo rsync -ai --progress -e "$ssh" --rsync-path 'sudo rsync' /boot/* $target_host:/boot/
 
 # if ramdisk is not copied to /boot/tmpfs get the one from /tmp/tftpboot
 if test -z "${copy_to_boot}"; then
     if ! test -e $target; then
-	echo "$target file does not exist. Consider to run update-ramdisk first"
-	exit 1
+        echo "$target file does not exist. Consider to run update-ramdisk first"
+        exit 1
     fi
-    rsync -ai --progress  --rsync-path 'sudo rsync' $target $target_host:/boot/tmpfs
+    sudo rsync -ai --progress -e "$ssh" --rsync-path 'sudo rsync' $target $target_host:/boot/tmpfs
 fi
 
 dns0=$(grep '^nameserver ' /etc/resolv.conf | awk '{print $2}' | sort -u | sed -n '1p')
 dns1=$(grep '^nameserver ' /etc/resolv.conf | awk '{print $2}' | sort -u | sed -n '2p')
-
 
 cat <<EOF | ssh $target_host sudo sh -
 sed '/copy_to_boot=/d;' -i /boot/ramdisk/ramdisk.conf
