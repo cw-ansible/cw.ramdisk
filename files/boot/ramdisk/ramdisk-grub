@@ -12,6 +12,15 @@ if test -e /boot/ramdisk/ramdisk.conf; then
     . /boot/ramdisk/ramdisk.conf
 fi
 
+# Bypass RAMdisk boot if image file is not present.
+# TODO: find a better way to do that.
+if test "$copy_to_boot" = "yes"; then
+    echo "set default=0"
+else
+    echo "set default=1"
+fi
+
+
 # Device containing our /boot partition.
 # For RAMdisk the recommendation is to use a standalone /boot partition.
 #
@@ -125,7 +134,7 @@ esac
 
 while [ "x$list" != "x" ] ; do
     linux=`version_find_latest $list`
-    echo "Found linux image: $linux" >&2
+    echo "Found linux image: $linux $GRUB_DEVICE_BOOT_UUID" >&2
     basename=`basename $linux`
     dirname=`dirname $linux`
     rel_dirname=`make_system_path_relative_to_its_root $dirname`
