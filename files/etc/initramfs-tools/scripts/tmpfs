@@ -126,12 +126,21 @@ _set_network() {
 	grep -qF up /sys/class/net/$DEVICE/operstate
 	if test $? -eq 0; then
 	    configure_networking
-	fi
 	
-	#ipconfig -t 5 $DEVICE
-	if test -e /run/net-$DEVICE.conf;  then
-	    _set_dns ${DEVICE}
-            break
+	    #ipconfig -t 5 $DEVICE
+	    if test -e /run/net-$DEVICE.conf;  then
+		_set_dns ${DEVICE}
+		break
+	    else
+		# On some old distribs /run/net-$DEVICE.conf file is not
+		# created by ipconfig. Ensure that this file exists when
+		# interface is UP.
+		ifconfig ${DEVICE} | grep -qF 'inet addr:'
+		if test $? -eq 0; then
+		    echo "# Old Debian" > /run/net-$DEVICE.conf
+		    break
+		fi
+	    fi
 	fi
     done
 }
@@ -555,6 +564,13 @@ EOF
 	esac
     fi
 
+    # Prevent init to cause a kernel panic on very old Debian when no file
+    # like /run/net-*.conf is found.
+    ls /run/net-*.conf 2>&1 >/dev/null
+    if test $? -ne 0; then
+	touch /run/net-dummy.conf
+    fi
+
     # Run tmpfs bottom scripts
     maybe_break tmpfs-bottom
     [ "$quiet" != "y" ] && log_begin_msg "Running /scripts/tmpfs-bottom"
@@ -567,9 +583,13 @@ EOF
     # temporary shut down the interface from the initram disk.
     for f in /run/net-*.conf; do
 	. $f
-	if ! test $PROTO = "dhcp"; then
-	    ip a d  "$IPV4ADDR"/"$IPV4NETMASK" dev $DEVICE
+	if ! test "$PROTO" = "dhcp"; then
+	    cidr=$(ip -o a | grep ${DEVICE} | sed -n 's/.* inet \([^ ]\+\).*/\1/p')
+	    ip a d $cidr dev $DEVICE
 	    ifconfig $DEVICE down
 	fi
     done
+
+    maybe_break tmpfs-end
+
 }
