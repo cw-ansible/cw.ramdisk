@@ -8,7 +8,7 @@
 
 # Copyright © 2015 Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
 # Created: 2015-05-20
-# Last changed: 2015-06-12 16:53:44
+# Last changed: 2015-07-15 18:49:12
 
 # This program is free software. It comes without any warranty, to
 # the extent permitted by applicable law. You can redistribute it
@@ -47,7 +47,7 @@ def hostname(fqdn=False):
         cmd += [ '-f' ]
     else:
         cmd += [ '-s' ]
-    result = run(['hostname'], stdout=subprocess.PIPE)
+    result = run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # do not remove stderr for Python2.6
     if result.returncode == 0:
         return result.stdout.read().split('\n')[0]
     return None
