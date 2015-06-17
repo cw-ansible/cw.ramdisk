@@ -12,7 +12,7 @@
     mount -o bind '{{ item }}' '{{ inventory_hostname }}/{{ item }}'
   connection: local
   when:
-    ischroot.rc == 2
+    ischroot.rc == 2 and (( ansible_lsb.id == 'Ubuntu' ) or ( ansible_lsb.id == 'Debian' and ansible_lsb.major_release|int() > 6 ))
   with_items:
     - /proc
     - /dev
@@ -38,7 +38,7 @@
     umount -l '{{ inventory_hostname }}/{{ item }}'
   connection: local
   when:
-    ischroot.rc == 2
+    ischroot.rc == 2 and (( ansible_lsb.id == 'Ubuntu' ) or ( ansible_lsb.id == 'Debian' and ansible_lsb.major_release|int() > 6 ))
   with_items:
     - /dev/pts
     - /dev
