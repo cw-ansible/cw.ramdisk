@@ -21,7 +21,10 @@ fi
 
 if test -x ${rootmnt}/boot/ramdisk/overlay; then
     log_begin_msg "Running overlay script"
+    # Old python (2.6) requires /dev/urandom to be present.
+    mount -o bind /dev ${rootmnt}/dev
     chroot ${rootmnt} /boot/ramdisk/overlay
+    umount ${rootmnt}/dev
     if test $? -eq 0; then
 	log_end_msg "OK"
     else
