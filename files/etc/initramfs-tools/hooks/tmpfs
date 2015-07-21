@@ -104,8 +104,10 @@ if test -e "/usr/sbin/dropbear"; then
     if test -n "$DROPBEAR_USERS"; then
 	rm -f "$CONFDIR/$ROOT_HOME/.ssh/authorized_keys"
 	for user in $DROPBEAR_USERS; do
-	    cat $(getent passwd $user | cut -d: -f6)/.ssh/authorized_keys \
-		>> "$CONFDIR/$ROOT_HOME/.ssh/authorized_keys"
+	    # remove any sshkey option
+	    sed  's,.*\(ssh-\(rsa\|dss\).*\),\1,' \
+		 $(getent passwd $user | cut -d: -f6)/.ssh/authorized_keys \
+		 >> "$CONFDIR/$ROOT_HOME/.ssh/authorized_keys"
 	done
     else
 	cat $(getent passwd root | cut -d: -f6)/.ssh/authorized_keys \
