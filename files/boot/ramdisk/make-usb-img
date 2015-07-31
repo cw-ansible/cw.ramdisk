@@ -1,0 +1,84 @@
+#!/bin/sh
+
+# apt-get install kpartx dosfstools parted
+
+IMG=usb.img
+# 512 Mb
+SIZE=512
+
+dd if=/dev/zero of=$IMG bs=1M count=$SIZE
+parted -s $IMG "mklabel msdos"
+parted -s $IMG "mkpart primary fat32 0% 100%"
+parted -s $IMG "toggle 1 boot"
+parted -s $IMG "print"
+
+kpartx -a $IMG
+DEVICE=$(kpartx -l $IMG  | awk '{print $1}')
+mkfs.vfat -n 'BOOT' -F 32 /dev/mapper/$DEVICE
+
+mount -t vfat /dev/mapper/$DEVICE /mnt
+cp -a /boot/* /mnt
+
+if ! test -e /mnt/tmpfs/*.gz; then
+    mkdir -p /mnt/tmpfs
+    cp -a /tmp/tftpboot/*.tar.gz /mnt/tmpfs
+fi
+grub-install /dev/loop0
+
+# cat <<EOF > /mnt/grub/grub.cfg
+
+# if loadfont $prefix/fonts/unicode.pf2 ; then
+#   set gfxmode=640x480
+#   insmod efi_gop
+#   insmod efi_uga
+#   insmod video_bochs
+#   insmod video_cirrus
+#   insmod gfxterm
+#   insmod png
+#   # set theme=${prefix}/themes/skyrock/theme.txt
+#   # export theme
+#   # terminal_output gfxterm
+# fi
+
+
+# serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1
+# set default="0"
+# set timeout=5
+
+# set color_normal=white/black
+# set color_highlight=black/white
+# export color_normal
+# export color_highlight
+
+
+# menuentry 'RAMdisk Ubuntu GNU/Linux, with Linux 3.13.0-51-generic' --class ubuntu --class gnu-linux --class gnu --class os {
+#         insmod gzio
+#         search --no-floppy --set=root -l BOOT
+#         setup_tmpfs_vars "vmlinuz-3.13.0-51-generic" "initrd.img-3.13.0-51-generic" ""
+#         echo    'Loading Linux 3.13.0-51-generic ...'
+#         linux   $kernel ip=dhcp boot=tmpfs root=LABEL=BOOT tmpfs_boot=tmpfs/boot.tar.gz  ro  verbose nomdmonddf nomdmonisw
+#         echo    'Loading initial ramdisk ...'
+#         initrd  $initrd
+# }
+
+
+# menuentry "Halt" {
+#     echo -n "Really halt system (y/N)? "
+#     read ret
+#     if [ "$ret" == "y" ]; then
+#         halt
+#     fi
+# }
+
+# menuentry "Reboot" {
+#     reboot
+# }
+
+
+# EOF
+
+
+
+umount /mnt
+mount
+kpartx -d $IMG
