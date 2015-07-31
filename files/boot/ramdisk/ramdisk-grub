@@ -12,9 +12,10 @@ if test -e /boot/ramdisk/ramdisk.conf; then
     . /boot/ramdisk/ramdisk.conf
 fi
 
-# Bypass RAMdisk boot if image file is not present.
+# Bypass RAMdisk boot if image file is not present or if the boot directory
+# is not /boot (in case we create a USB image).
 # TODO: find a better way to do that.
-if test "$copy_to_boot" = "yes"; then
+if test "$copy_to_boot" = "yes" -o "$BOOT" != "/boot"; then
     echo "set default=0"
 else
     exit 0
