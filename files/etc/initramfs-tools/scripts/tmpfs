@@ -499,6 +499,7 @@ EOF
     maybe_break tmpfs-begin
     
     #configure_networking
+    _reload_modules
     _set_network
     
     # Default delay is around 180s
