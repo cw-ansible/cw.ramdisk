@@ -19,7 +19,18 @@ tar_opts=
 tar=/bin/tar
 $tar --help | grep -q -F -- '--xattr'
 if test $? -eq 0; then
-    tar_opts="--xattrs --xattrs-include '*' --selinux --acls"
+    # We don't want to use --acls when extracting files since it would set
+    # too large permissions:
+    # default:user::rwx
+    # default:group::rwx
+    # default:other::rwx
+    #
+    # The --xattrs was here set because the ping command used to enable
+    # access to raw sockets with capabilities. This feature has been
+    # disabled in favor fo setuid binaries. (see
+    # https://bugs.launchpad.net/ubuntu/+source/ubiquity/+bug/1302192 and
+    # the /var/lib/dpkg/info/iputils-ping.postinst)
+    tar_opts="--xattrs --xattrs-include '*' --selinux"
 fi
 
 # Mount type is either local or remote
