@@ -8,7 +8,7 @@
 
 # Copyright © 2015 Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
 # Created: 2015-05-20
-# Last changed: 2015-07-15 18:49:12
+# Last changed: 2015-09-23 13:32:20
 
 # This program is free software. It comes without any warranty, to
 # the extent permitted by applicable law. You can redistribute it
@@ -30,9 +30,16 @@ import pipes
 import string
 import shlex
 import sys
+import time
+
+LOG=open('/var/log/ramdisk-overlay.log', 'w')
+
+def log(msg, indent=0):
+    LOG.write('%s %s%s\n' % (time.strftime("%d-%m-%Y %H:%M:%S"), indent*' ', msg))    
+
 
 def run(cmd, stdout=True, stderr=True):
-#    print(' '.join(pipes.quote(arg) for arg in cmd))
+    log('Running: ' + ' '.join(pipes.quote(arg) for arg in cmd))
     proc = subprocess.Popen(
         cmd,
         stdout=stdout,
@@ -77,14 +84,18 @@ def do_merge_dir(src, dest):
     run(['cp', '-v', '-R', '-n', src, dest])
 
 def do_compute_files(hl, action, relative=False, remove=True):
+    log('do_compute_files(%s, %s, %s, %s):' % (hl, action, relative, remove))
     for h in hl:
         src = expand(h['src'])
         if not os.path.exists(src):
+            log('%s not found' % src, 2)
             print '%s not found' % src
             continue
         if not(os.path.exists(os.path.dirname(h['dest']))):
+            log('making directory %s' % os.path.dirname(h['dest']), 2)
             os.makedirs(os.path.dirname(h['dest']))
         if remove and os.path.exists(h['dest']):
+            log('making directory %s' % os.path.dirname(h['dest']), 2)
             os.unlink(h['dest'])
         if relative is not False:
             src = os.path.relpath(src, os.path.dirname(h['dest']))
@@ -93,40 +104,48 @@ def do_compute_files(hl, action, relative=False, remove=True):
         else:
             src = src
             dest = h['dest']
-
+        log('link %s %s -> %s' % (action, h['dest'], src), 2)
         # print('%s -> %s' % (src, dest))
         action(src, dest)
 
 def do_execute(hl):
+    log('do_execute:')
     for h in hl:
         h = shlex.split(expand(h))
         try:
+            log(' '.join(pipes.quote(arg) for arg in h), 2)
             proc = run(h)
         except:
             pass
         if proc.returncode != 0:
+            log('rc: %s' % (proc.returncode), 4)
             sys.stderr.write("Could not run %s\n" %
                              (' '.join(pipes.quote(arg) for arg in h)))
 
 
             
 def compute_hostbased(yml):
+    log('compute_hostbased:')
     if not yml.has_key('vars') or not yml['vars'].has_key('hostbased'):
+        log('no rule found', 2)
         return
+    
     for k in yml['vars']['hostbased']:
-        print k
+        log('testing %s' % k, 2)
         k_re = re.compile(k['regexp'])
         if k_re.search(EXPENSION['HOSTNAME']):
             EXPENSION['HOSTBASED'] = k['value']
+            log('Matched %s' % EXPENSION['HOSTBASED'], 4)
             return
 
 def __init__():
+    log('starting overlay')
     yml = load_yaml('/boot/ramdisk/overlay.yml')
     for y in yml:
         if y is None:
             continue
         compute_hostbased(y)
-        print EXPENSION
+        log('Expension: %s' % EXPENSION)
         if y.has_key('hard-links'):
             do_compute_files(y['hard-links'], os.link)
         if y.has_key('links'):
@@ -138,5 +157,8 @@ def __init__():
         if y.has_key('exec'):
             do_execute(y['exec'])
 
+    log('done')
+    LOG.close()
+            
 if __name__ == "__main__":
     __init__()
