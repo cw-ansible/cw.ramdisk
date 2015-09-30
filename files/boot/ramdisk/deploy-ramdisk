@@ -30,6 +30,9 @@ if test -z "${copy_to_boot}"; then
         echo "$target file does not exist. Consider to run update-ramdisk first"
         exit 1
     fi
+    cat <<EOF | $ssh $target_host sudo sh -
+mkdir -p /boot/tmpfs
+EOF
     sudo rsync -ai --progress -e "$ssh" --rsync-path 'sudo rsync' $target $target_host:/boot/tmpfs
 fi
 
