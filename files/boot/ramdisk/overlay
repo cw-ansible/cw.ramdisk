@@ -172,6 +172,8 @@ def __init__():
             do_compute_files(y['merge-dir'], do_merge_dir, remove=False)
         if y.has_key('exec'):
             do_execute(y['exec'])
+        if y.has_key('copy'):
+            do_compute_files(y['copy'], shutil.copyfile)
 
     log('done')
     LOG.close()
