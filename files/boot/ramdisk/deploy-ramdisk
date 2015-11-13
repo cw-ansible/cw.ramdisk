@@ -22,7 +22,8 @@ if test -z "${deploy_key}"; then
 fi
 ssh="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l $deploy_user -i $deploy_key"
 
-sudo rsync -ai --progress -e "$ssh" --rsync-path 'sudo rsync' /boot/* $target_host:/boot/
+sudo rsync -ai --progress -e "$ssh" --rsync-path 'sudo rsync' \
+     --delete --exclude /tmpfs /boot/ $target_host:/boot/
 
 # if ramdisk is not copied to /boot/tmpfs get the one from /tmp/tftpboot
 if test -z "${copy_to_boot}"; then
