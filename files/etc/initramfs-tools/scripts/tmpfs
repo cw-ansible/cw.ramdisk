@@ -39,13 +39,17 @@ fs_type=
 boot_prefix=
 
 
-# Wee need to unset the ROOT variable since /init call 'parse_numeric' which
+# We need to unset the ROOT variable since /init call 'parse_numeric' which
 # computes a root block device based upon:
 #  - MAJOR:MINOR
 #  - MAJORMINOR (hex encoded)
 #
 # thus if the ROOT ramdisk image starts with [0-9A-Fa-f] /init fails with an
 # arithmetic error
+#
+# See:
+# - https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=697017
+# - https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=606806
 ramdisk_root="${ROOT}"
 ROOT=
 export ROOT
