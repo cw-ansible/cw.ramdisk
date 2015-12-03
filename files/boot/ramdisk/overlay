@@ -8,7 +8,7 @@
 
 # Copyright © 2015 Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
 # Created: 2015-05-20
-# Last changed: 2015-10-05 17:01:17
+# Last changed: 2015-12-03 16:20:21
 
 # This program is free software. It comes without any warranty, to
 # the extent permitted by applicable law. You can redistribute it
@@ -140,20 +140,31 @@ def do_execute(hl):
                              (' '.join(pipes.quote(arg) for arg in cmd)))
 
             
-def compute_hostbased(yml):
-    log('compute_hostbased:')
-    if not yml.has_key('vars') or not yml['vars'].has_key('hostbased'):
-        log('no rule found', 2)
-        return
+def compute_hostbased_var(yml, var):
+    log('compute_%s:' % var)
+
+    # Compatibility
+    if var =='hostbased':
+        var_cap = var.uppercase()
+    else:
+        var_cap = var
     
-    for k in yml['vars']['hostbased']:
-        log('testing %s' % k, 2)
+    for k in yml['vars'][var]:
+        log('testing %s for %s' % (k, var), 2)
         k_re = re.compile(k['regexp'])
         if k_re.search(EXPENSION['HOSTNAME']):
-            EXPENSION['HOSTBASED'] = k['value']
-            log('Matched %s' % EXPENSION['HOSTBASED'], 4)
+            EXPENSION[var_cap] = k['value']
+            log('Matched %s for %s' % (EXPENSION[var_cap], var), 4)
             return
 
+def compute_hostbased(yml):
+    print yml
+    if not yml.has_key('vars'):
+        log('no vars found', 2)
+        return
+    for var in yml['vars'].keys():
+        compute_hostbased_var(yml, var)
+    
 def __init__():
     log('starting overlay')
     yml = load_yaml('/boot/ramdisk/overlay.yml')
