@@ -8,7 +8,7 @@
 
 # Copyright © 2015 Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
 # Created: 2015-05-20
-# Last changed: 2015-12-03 16:20:21
+# Last changed: 2015-12-03 17:25:41
 
 # This program is free software. It comes without any warranty, to
 # the extent permitted by applicable law. You can redistribute it
@@ -143,22 +143,19 @@ def do_execute(hl):
 def compute_hostbased_var(yml, var):
     log('compute_%s:' % var)
 
-    # Compatibility
-    if var =='hostbased':
-        var_cap = var.uppercase()
-    else:
-        var_cap = var
     
     for k in yml['vars'][var]:
         log('testing %s for %s' % (k, var), 2)
         k_re = re.compile(k['regexp'])
         if k_re.search(EXPENSION['HOSTNAME']):
-            EXPENSION[var_cap] = k['value']
-            log('Matched %s for %s' % (EXPENSION[var_cap], var), 4)
+            EXPENSION[var] = k['value']
+            # Compatibility
+            if var == 'hostbased':
+                EXPENSION[var.upper()] = k['value']
+            log('Matched %s for %s' % (EXPENSION[var], var), 4)
             return
 
 def compute_hostbased(yml):
-    print yml
     if not yml.has_key('vars'):
         log('no vars found', 2)
         return
