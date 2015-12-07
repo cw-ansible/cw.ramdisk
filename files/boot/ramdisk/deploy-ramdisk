@@ -47,7 +47,7 @@ sed -i 's/^\(set -e\)/# \1/' /usr/sbin/grub-mkconfig
 ln -nfs /boot/ramdisk/ramdisk-grub /etc/grub.d/09-ramdisk
 
 if test -n "$network"; then
-  ip_device=eth0
+  ip_device="$network"
   ip_hostname=\$(hostname -s)
   ip_addr=\$(ifconfig \$ip_device | grep 'inet addr:' | sed -n 's/.*addr:\\([^[:space:]]\\+\\).*/\\1/p')
   ip_mask=\$(ifconfig \$ip_device | grep 'inet addr:' | sed -n 's/.*Mask:\\([^[:space:]]\\+\\).*/\\1/p')
