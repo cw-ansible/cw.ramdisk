@@ -31,6 +31,8 @@ BIN_FILES="
 /usr/bin/lzip
 /usr/bin/lzop
 /usr/bin/lzma
+/bin/ip
+/sbin/vconfig
 "
 
 LIB_FILES="
@@ -40,6 +42,8 @@ LIB_FILES="
 "
 
 SBIN_FILES="/usr/sbin/dropbear"
+
+MODULES="8021q garp stp mrp llc"
 
 
 # Change initramfs root directory to /home/root since rootmnt is already
@@ -63,6 +67,10 @@ for f in $LIB_FILES; do
 	#cp $f $DESTDIR/lib/x86_64-linux-gnu
 	copy_exec $f /lib/x86_64-linux-gnu
     fi
+done
+
+for m in $MODULES; do
+    manual_add_modules $m
 done
 
 # Don't check askpass existance since we need it

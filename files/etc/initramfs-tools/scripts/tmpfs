@@ -86,6 +86,34 @@ _reload_modules() {
     done
 }
 
+
+
+timeout () {
+    # Syntax: timeout time cmd [ args ]
+    #
+    # Run cmd with args (if applicable). Timeout cmd after time seconds.
+    #
+    # The timeout(1) program cannot be used since it cannot run a bash
+    # function.
+    #
+    # Shamelessly stolen from
+    # https://forums.gentoo.org/viewtopic-t-634406-start-0.html
+    local timeout=$1; shift;
+    "$@" <&0 &
+    local cmd_pid=$!;
+    local i=0
+    while test $i -lt $timeout; do
+        sleep 1
+        i=$((i + 1))
+    done
+    if test $i -ge $timeout; then
+        echo "command $@ timed out after $timeout seconds"
+        kill -TERM $cmd_pid
+    fi
+    wait $cmd_pid
+}
+
+
 _set_dns() {
     device=$1
     # Generate resolv.conf file if nameserver are given from the
@@ -107,40 +135,68 @@ _set_dns() {
     fi
 }
 
+
+_bring_iface_up() {
+    # Bring interface given in $1 UP.
+    # Perform $DEVICE_MAX_TRIES before giving up.
+    __device=$1
+    
+    log_begin_msg "Bringing $__device up"
+    ifconfig $__device up
+    
+    # on some device we have to wait until they become ready.
+    i=0
+    while test $i -lt $DEVICE_MAX_TRIES; do
+	grep -qF up /sys/class/net/$__device/operstate 
+	if test $? -eq 0; then
+	    break
+	fi
+	sleep 1
+	i=$(( $i + 1 ))
+	log_begin_msg "."
+    done
+
+    if test $i -ge $DEVICE_MAX_TRIES; then
+	log_failure_msg "is $__device connected?"
+	return
+    fi
+    log_end_msg "Done"
+}
+
+_setup_vlan() {
+    _IP_iface=$(echo "$IP" | cut -d: -f6)
+
+    # if interface is not found, nothing to do here
+    if test -z "$_IP_iface"; then
+	return
+    fi
+
+    _IP_vlan_iface=$(echo "$_IP_iface" | cut -d. -f1)
+    _IP_vlan_id=$(echo "$_IP_iface" | cut -d. -f2)
+
+    vconfig add $_IP_vlan_iface $_IP_vlan_id
+    _bring_iface_up $_IP_vlan_iface
+}
+
 _set_network() {
+    # first try any VLAN interface.
+    _vl=$(_setup_vlan)
+
     # give a chance for tg3 links to come up.
     for DEVICE in $(ifconfig -a | awk '{if($2=="Link"&&$3=="encap:Ethernet"){print $1}}'); do
 	# if /run/net-${DEVICE}.conf exists there is a slight chance the
-	# network interface has ben set up
+	# network interface has been set up
 	if test -e /run/net-${DEVICE}.conf; then
 	    _set_dns ${DEVICE}
 	    return
 	fi
-	log_begin_msg "Bringing $DEVICE up"
-	ifconfig $DEVICE up
-	
-	# on some device we have to wait until they become ready.
-	i=0
-	while test $i -lt $DEVICE_MAX_TRIES; do
-	    grep -qF up /sys/class/net/$DEVICE/operstate 
-	    if test $? -eq 0; then
-		break
-	    fi
-	    sleep 1
-	    i=$(( $i + 1 ))
-	    log_begin_msg "."
-	done
 
-	# if interface is still not there give up.
-	if test $? -ge $DEVICE_MAX_TRIES; then
-	    log_failure_msg "is $DEVICE connected?"
-	    continue
-	fi
+	_bring_iface_up ${DEVICE}
 
 	# configure network only if interface is UP
 	grep -qF up /sys/class/net/$DEVICE/operstate
 	if test $? -eq 0; then
-	    configure_networking
+	    timeout 10 configure_networking
 	
 	    #ipconfig -t 5 $DEVICE
 	    if test -e /run/net-$DEVICE.conf;  then
