@@ -588,7 +588,7 @@ EOF
     maybe_break tmpfs-mount
     # loop until tmpfs succeeds
     do_tmpfsmount
-    while [ ${retry_nr} -lt ${delay} ] && [ ! -e ${rootmnt}${init} ]; do
+    while [ ${retry_nr} -lt ${delay} ] && ! chroot "${rootmnt}" test -x "${init}" ; do
         log_begin_msg "Retrying tmpfs mount"
         /bin/sleep 1
         do_tmpfsmount
@@ -596,7 +596,7 @@ EOF
         log_end_msg
     done
 
-    if [ ! -e ${rootmnt}${init} ]; then
+    if ! chroot "${rootmnt}" test -x "${init}"; then
 
 	case $mount_type in
 	    'local')
