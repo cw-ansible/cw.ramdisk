@@ -8,7 +8,7 @@
 
 # Copyright © 2015 Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
 # Created: 2015-05-20
-# Last changed: 2015-12-04 13:30:48
+# Last changed: 2016-01-28 10:28:05
 
 # This program is free software. It comes without any warranty, to
 # the extent permitted by applicable law. You can redistribute it
@@ -168,7 +168,7 @@ def __init__():
     log('starting overlay')
     yml = load_yaml('/boot/ramdisk/overlay.yml')
     for y in yml:
-        if y is None:
+        if y is None or type(yml) != dict:
             continue
         compute_hostbased(y)
         log('Expension: %s' % EXPENSION)
