@@ -45,6 +45,24 @@
   - src: etc/initramfs-tools/scripts/tmpfs-bottom/fix-network-interface
   - src: etc/initramfs-tools/scripts/tmpfs-bottom/overlays
 
+
+- name: test systemd existance
+  stat:
+    path: '/bin/systemctl'
+  register: systemd_exists
+
+- name: copy initramfs tools (for systemd)
+  copy:
+    src: '{{ item.src }}'
+    dest: '{{ ramdisk_prefix | default("") }}/{{ item.dest | default("/" + item.src) }}'
+    owner: '{{ item.user | default("root") }}'
+    group: '{{ item.group | default("root") }}'
+    mode: '{{ item.group | default("0755") }}'
+  when: systemd_exists.stat.exists
+  with_items:
+  - src: etc/initramfs-tools/scripts/tmpfs-bottom/systemd-helpers
+
+    
 - name: link RAMdisk grub snippet
   file:
     src: /boot/ramdisk/ramdisk-grub

@@ -1,0 +1,23 @@
+#!/bin/sh
+
+
+PREREQ="ensure-fstab ensure-wtmp"
+prereqs() {
+    echo "$PREREQ"
+}
+
+case $1 in
+    prereqs)
+        prereqs
+        exit 0
+	;;
+esac
+
+#hdir=${rootmnt}/var/lib/systemd/helpers/
+set -x
+# mkdir -p $hdir
+for i in $(grep uart:16550A /proc/tty/driver/serial | cut -d: -f1); do
+    ln -nfs "/lib/systemd/system/getty@.service" \
+       "${rootmnt}/etc/systemd/system/getty.target.wants/getty@ttyS$i.service"
+done
+set +x
