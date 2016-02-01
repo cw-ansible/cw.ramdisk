@@ -104,7 +104,7 @@ EOF
   message="$(gettext_printf "Loading Linux %s ..." ${version})"
   cat << EOF
 	echo	'$message'
-	linux	\$kernel ip=${grub_ip} boot=tmpfs root=\$tmpfs_root tmpfs_boot=\$tmpfs_boot tmpfs_boot_prefix=\$tmpfs_boot_prefix ro ${args} ${extra_args} panic=10 console=tty0 console=ttyS1,115200
+	linux	\$kernel ip=${grub_ip} boot=tmpfs root=\$tmpfs_root tmpfs_boot=\$tmpfs_boot tmpfs_boot_prefix=\$tmpfs_boot_prefix ro ${args} ${extra_args} panic=10 console=tty0 console=ttyS1,115200 net.ifnames=0
 EOF
   if test -n "${initrd}" ; then
     message="$(gettext_printf "Loading initial ramdisk ...")"
