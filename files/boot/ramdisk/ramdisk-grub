@@ -61,7 +61,7 @@ function setup_tmpfs_vars {
     else
         set kernel="\${3}/\${1}"
         set initrd="\${3}/\${2}"
-        tmpfs_boot="UUID=$GRUB_DEVICE_BOOT_UUID"
+        set tmpfs_boot="UUID=$GRUB_DEVICE_BOOT_UUID"
         set tmpfs_root="\${3}/tmpfs/$(basename $target)"
         set tmpfs_boot_prefix="\${3}"
     fi
