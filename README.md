@@ -183,7 +183,9 @@ synchronize *RAMdisk* files:
 If you need remote host to keep its network configuration over reboot (if
 you don't have DHCP server for example), you can run:
 
-	deploy-ramdisk host t
+	deploy-ramdisk host IFACE_NAME
+
+`IFACE_NAME` is the interface which should be reachable during the boot time.
 
 And *voilà* now you can safely reboot the server.
 
