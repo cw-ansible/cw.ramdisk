@@ -174,7 +174,11 @@ _setup_vlan() {
     _IP_vlan_iface=$(echo "$_IP_iface" | cut -d. -f1)
     _IP_vlan_id=$(echo "$_IP_iface" | cut -d. -f2)
 
-    vconfig add $_IP_vlan_iface $_IP_vlan_id
+    # Only run vconfig if a vlan ID is found to prevent from creating VLAN0
+    # on iface.
+    if "$_IP_vlan_id" != "$_IP_iface"; then
+	vconfig add $_IP_vlan_iface $_IP_vlan_id
+    fi
     _bring_iface_up $_IP_vlan_iface
 }
 
