@@ -28,6 +28,7 @@
   with_items:
     - pigz
 
+
 - name: install USB image generation tools
   apt:
     pkg: '{{ item }}'
@@ -38,7 +39,7 @@
     - kpartx
     - parted
     - dosfstools
-      
+    
 - name: copy ramdisk tool
   copy:
     src: '{{ item.src }}'

@@ -3,7 +3,7 @@
 # Copyright © 2015 Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
 
 # Created: 2015-07-31
-# Last changed: 2016-06-17 18:32:52
+# Last changed: 2016-05-20 17:58:43
 
 # This program is free software. It comes without any warranty, to
 # the extent permitted by applicable law. You can redistribute it
@@ -47,6 +47,7 @@ if ! test -e $MNT/boot/tmpfs/*.gz; then
     cp -a /tmp/tftpboot/boot/tmpfs/*.tar.gz $MNT/boot/tmpfs
 fi
 
+
 grub-install --boot-directory $MNT/boot $LOOP
 
 # Create grub menu
@@ -57,6 +58,7 @@ set timeout=5
 
 EOF
 BOOT=$MNT/boot $MNT/boot/ramdisk/ramdisk-grub $MNT >> $MNT/boot/grub/grub.cfg
+
 
 #ls -al $MNT
 #mv $MNT/{initrd,vmlinuz}* $MNT/boot

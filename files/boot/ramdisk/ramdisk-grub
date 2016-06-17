@@ -13,7 +13,7 @@ if test -e /boot/ramdisk/ramdisk.conf; then
 fi
 
 
-# Bypass RAMdisk boot if image file is not.
+# Bypass RAMdisk boot if image file is not present.
 # TODO: find a better way to do that.
 if test "$copy_to_boot" = "yes"; then
     # In that case the RAMdisk is copied on local harddrive in
@@ -187,8 +187,6 @@ while [ "x$list" != "x" ] ; do
   linux_entry "${OS}" "${version}" false \
       "${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}"
 
-    
+
     list=`echo $list | tr ' ' '\n' | grep -vx $linux | tr '\n' ' '`
 done
-
-
