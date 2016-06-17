@@ -45,6 +45,7 @@ fi
 # generator in a standalone mode to build PXE and ISO grub configuration.
 GRUB_DEVICE_BOOT="`${grub_probe} --target=device $BOOT`"
 GRUB_DEVICE_BOOT_UUID="`${grub_probe} --device ${GRUB_DEVICE_BOOT} --target=fs_uuid 2> /dev/null`" || true
+MODULES="`${grub_probe} --device ${GRUB_DEVICE_BOOT} --target=abstraction`"
 
 CLASS="--class gnu-linux --class gnu --class os"
 
@@ -101,6 +102,15 @@ linux_entry ()
       save_default_entry | sed -e "s/^/\t/"
   fi
 
+  grub-probe -t abstraction BOOT
+
+  # Add abstraction modules
+  for m in $MODULES; do
+  cat <<EOF
+        insmod $m
+EOF
+  done
+  
   cat << EOF
 	insmod gzio
         setup_tmpfs_vars "$basename" "$initrd" "$rel_dirname"
