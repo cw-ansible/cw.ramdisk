@@ -12,13 +12,27 @@ if test -e /boot/ramdisk/ramdisk.conf; then
     . /boot/ramdisk/ramdisk.conf
 fi
 
-# Bypass RAMdisk boot if image file is not present or if the boot directory
-# is not /boot (in case we create a USB image).
+BOOT=$1
+
+# Bypass RAMdisk boot if image file is not.
 # TODO: find a better way to do that.
-if test "$copy_to_boot" = "yes" -o "$BOOT" != "/boot"; then
+if test "$copy_to_boot" = "yes"; then
+    # In that case the RAMdisk is copied on local harddrive in
+    # /boot/tmpfs. Thus we want grub to use it.
     echo "set default=0"
 else
-    exit 0
+    if test -z "$BOOT"; then
+	# If no BOOT parameter we don't want to mess with current grub
+	# configuration
+       exit 0
+    elif test "$BOOT" != "/boot"; then
+	# If BOOT is not /boot we need to deploy grub. This is mainly used
+	# to create USB image.
+       echo "set default=0"
+    else
+       # in all other case, we don't want to mess with GRUB.
+       exit 0
+    fi
 fi
 
 
@@ -27,7 +41,7 @@ fi
 #
 # The boot device is determined here since we want to run this script
 # generator in a standalone mode to build PXE and ISO grub configuration.
-GRUB_DEVICE_BOOT="`${grub_probe} --target=device /boot`"
+GRUB_DEVICE_BOOT="`${grub_probe} --target=device $BOOT`"
 GRUB_DEVICE_BOOT_UUID="`${grub_probe} --device ${GRUB_DEVICE_BOOT} --target=fs_uuid 2> /dev/null`" || true
 
 CLASS="--class gnu-linux --class gnu --class os"
@@ -62,7 +76,7 @@ function setup_tmpfs_vars {
         set kernel="\${3}/\${1}"
         set initrd="\${3}/\${2}"
         set tmpfs_boot="UUID=$GRUB_DEVICE_BOOT_UUID"
-        set tmpfs_root="\${3}/tmpfs/$(basename $target)"
+        set tmpfs_root="/tmpfs/$(basename $target)"
         set tmpfs_boot_prefix="\${3}"
     fi
 }

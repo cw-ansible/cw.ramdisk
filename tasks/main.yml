@@ -27,6 +27,17 @@
     cache_valid_time: 3600
   with_items:
     - pigz
+
+- name: install USB image generation tools
+  apt:
+    pkg: '{{ item }}'
+    update_cache: yes
+    install_recommends: no
+    cache_valid_time: 3600
+  with_items:
+    - kpartx
+    - parted
+    - dosfstools
       
 - name: copy ramdisk tool
   copy:
@@ -35,6 +46,7 @@
     mode: '0755'
   with_items:
     - src: boot/ramdisk/deploy-ramdisk
+    - src: boot/ramdisk/make-usb-image
     - src: boot/ramdisk/update-ramdisk
     - src: boot/ramdisk/ramdisk-grub
     - src: boot/ramdisk/overlay

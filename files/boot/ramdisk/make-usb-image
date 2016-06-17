@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# Copyright © 2015 Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
+
+# Created: 2015-07-31
+# Last changed: 2016-06-17 18:14:09
+
+# This program is free software. It comes without any warranty, to
+# the extent permitted by applicable law. You can redistribute it
+# and/or modify it under the terms of the Do What The Fuck You Want
+# To Public License, Version 2, as published by Sam Hocevar. See
+# http://sam.zoy.org/wtfpl/COPYING for more details.
+
+
+IMG=usb.img
+# 512 Mb
+SIZE=512
+
+dd if=/dev/zero of=$IMG bs=1M count=$SIZE
+
+parted -s $IMG "mklabel msdos"
+parted -s $IMG "mkpart primary fat32 0% 100%"
+parted -s $IMG "toggle 1 boot"
+parted -s $IMG "print"
+
+LOOP=$(losetup -f)
+
+
+losetup -v --show $LOOP $IMG
+kpartx -v -a $LOOP
+
+KLOOP=$(kpartx -l $LOOP  | awk '{print $1}' | head -n 1)
+mkfs.vfat -n 'BOOT' -F 32 /dev/mapper/$KLOOP
+TYPE=$(/sbin/blkid -s TYPE -o value /dev/mapper/$KLOOP)
+
+MNT=$(mktemp -d)
+
+
+mount -t $TYPE /dev/mapper/$KLOOP $MNT
+
+cp -a /boot/* $MNT
+
+# Make sure a ramdisk image is found on the disk image
+if ! test -e $MNT/tmpfs/*.gz; then
+    mkdir -p $MNT/tmpfs
+    cp -a /tmp/tftpboot/boot/tmpfs/*.tar.gz $MNT/tmpfs
+fi
+
+grub-install --boot-directory $MNT $LOOP
+
+# Create grub menu
+cat <<EOF > $MNT/grub/grub.cfg
+set menu_color_normal=white/black
+set menu_color_highlight=black/light-gray
+set timeout=5
+
+EOF
+$MNT/ramdisk/ramdisk-grub $MNT >> $MNT/grub/grub.cfg
+
+
+ls -al $MNT
+mkdir $MNT/boot
+mv $MNT/{initrd,vmlinuz}* $MNT/boot
+#ls -al $MNT/boot
+
+
+cat $MNT/grub/grub.cfg
+df -h
+
+umount $MNT
+kpartx -d $LOOP
+losetup -d $LOOP
+rmdir $MNT
+
+cat <<EOF
+Mounting image using:
+
+    mkdir -p $MNT
+    losetup -v --show $LOOP $IMG
+    kpartx -v -a $LOOP
+    mount -t $TYPE /dev/mapper/$KLOOP $MNT
+
+    umount $MNT
+    kpartx -d $LOOP
+    losetup -d $LOOP
+    mkdir -p $MNT
+EOF
