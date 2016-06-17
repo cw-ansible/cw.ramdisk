@@ -34,7 +34,14 @@ fi
 _get_tar_compression() {
     local file=$(basename $1 .gpg)
     case ${file} in
-	*.tar.gz|*.tgz) echo '--gzip' ;;
+	*.tar.gz|*.tgz)
+	    which pigz 2>&1 > /dev/null
+	    if test $? -eq 0; then
+		echo '--use-compress-program pigz'
+	    else
+		echo '--gzip'
+	    fi
+	    ;;
         *.tar.bz2|*.tbz2) echo '--bzip2' ;;
 	*.tar.Z|*.taz) echo '--compress' ;;
         *.tar.xz) echo '--xz' ;;

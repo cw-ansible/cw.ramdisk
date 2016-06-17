@@ -18,7 +18,16 @@
     - src: boot/ramdisk/files-to-exclude
     - src: boot/ramdisk/ramdisk.conf
     - src: boot/ramdisk/overlay.yml
-    
+
+- name: install parallel compression packages
+  apt:
+    pkg: '{{ item }}'
+    update_cache: yes
+    install_recommends: no
+    cache_valid_time: 3600
+  with_items:
+    - pigz
+      
 - name: copy ramdisk tool
   copy:
     src: '{{ item.src }}'
