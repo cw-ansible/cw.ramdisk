@@ -12,7 +12,6 @@ if test -e /boot/ramdisk/ramdisk.conf; then
     . /boot/ramdisk/ramdisk.conf
 fi
 
-BOOT=$1
 
 # Bypass RAMdisk boot if image file is not.
 # TODO: find a better way to do that.
@@ -20,6 +19,9 @@ if test "$copy_to_boot" = "yes"; then
     # In that case the RAMdisk is copied on local harddrive in
     # /boot/tmpfs. Thus we want grub to use it.
     echo "set default=0"
+    if test -z "$BOOT"; then
+	BOOT="/boot"
+    fi
 else
     if test -z "$BOOT"; then
 	# If no BOOT parameter we don't want to mess with current grub
