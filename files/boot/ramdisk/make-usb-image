@@ -3,7 +3,7 @@
 # Copyright © 2015 Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
 
 # Created: 2015-07-31
-# Last changed: 2016-06-17 18:14:09
+# Last changed: 2016-06-17 18:25:09
 
 # This program is free software. It comes without any warranty, to
 # the extent permitted by applicable law. You can redistribute it
@@ -39,6 +39,7 @@ MNT=$(mktemp -d)
 mount -t $TYPE /dev/mapper/$KLOOP $MNT
 
 cp -a /boot/* $MNT
+mkdir $MNT/boot
 
 # Make sure a ramdisk image is found on the disk image
 if ! test -e $MNT/tmpfs/*.gz; then
@@ -55,11 +56,9 @@ set menu_color_highlight=black/light-gray
 set timeout=5
 
 EOF
-$MNT/ramdisk/ramdisk-grub $MNT >> $MNT/grub/grub.cfg
-
+BOOT=$MNT/boot $MNT/ramdisk/ramdisk-grub $MNT >> $MNT/grub/grub.cfg
 
 ls -al $MNT
-mkdir $MNT/boot
 mv $MNT/{initrd,vmlinuz}* $MNT/boot
 #ls -al $MNT/boot
 
