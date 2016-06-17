@@ -3,7 +3,7 @@
 # Copyright © 2015 Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
 
 # Created: 2015-07-31
-# Last changed: 2016-06-17 18:25:09
+# Last changed: 2016-06-17 18:32:52
 
 # This program is free software. It comes without any warranty, to
 # the extent permitted by applicable law. You can redistribute it
@@ -38,33 +38,47 @@ MNT=$(mktemp -d)
 
 mount -t $TYPE /dev/mapper/$KLOOP $MNT
 
-cp -a /boot/* $MNT
-mkdir $MNT/boot
+cp -a /boot $MNT
+#mkdir $MNT/boot
 
 # Make sure a ramdisk image is found on the disk image
-if ! test -e $MNT/tmpfs/*.gz; then
-    mkdir -p $MNT/tmpfs
-    cp -a /tmp/tftpboot/boot/tmpfs/*.tar.gz $MNT/tmpfs
+if ! test -e $MNT/boot/tmpfs/*.gz; then
+    mkdir -p $MNT/boot/tmpfs
+    cp -a /tmp/tftpboot/boot/tmpfs/*.tar.gz $MNT/boot/tmpfs
 fi
 
-grub-install --boot-directory $MNT $LOOP
+grub-install --boot-directory $MNT/boot $LOOP
 
 # Create grub menu
-cat <<EOF > $MNT/grub/grub.cfg
+cat <<EOF > $MNT/boot/grub/grub.cfg
 set menu_color_normal=white/black
 set menu_color_highlight=black/light-gray
 set timeout=5
 
 EOF
-BOOT=$MNT/boot $MNT/ramdisk/ramdisk-grub $MNT >> $MNT/grub/grub.cfg
+BOOT=$MNT/boot $MNT/boot/ramdisk/ramdisk-grub $MNT >> $MNT/boot/grub/grub.cfg
 
-ls -al $MNT
-mv $MNT/{initrd,vmlinuz}* $MNT/boot
+#ls -al $MNT
+#mv $MNT/{initrd,vmlinuz}* $MNT/boot
 #ls -al $MNT/boot
 
+cat $MNT/boot/grub/grub.cfg
 
-cat $MNT/grub/grub.cfg
+if test -d /usr/lib/grub/x86_64-efi; then
+    mkdir -p $MNT/EFI/BOOT
+    cp -a /usr/lib/grub/x86_64-efi $MNT/boot/grub
+
+    grub-mkimage -o $MNT/EFI/BOOT/bootx64.efi -p /boot/grub -O x86_64-efi \
+		 fat iso9660 part_gpt part_msdos normal boot linux \
+		 configfile loopback chain efifwsetup efi_gop efi_uga ls \
+		 search search_label search_fs_uuid search_fs_file gfxterm \
+		 gfxterm_background gfxterm_menu test all_video loadenv \
+		 exfat ext2 ntfs btrfs hfsplus udf fi
+fi
+
 df -h
+
+ls -al $MNT
 
 umount $MNT
 kpartx -d $LOOP
